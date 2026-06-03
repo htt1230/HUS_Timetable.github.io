@@ -4,83 +4,20 @@
     <link rel="stylesheet" href="select.css">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>北海道科学大学 バス時刻</title>
-    <style>
-        /* 1. 画面全体の余白をリセット */
-        html, body {
-            margin: 0;
-            padding: 0;;
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: #232323;
-            color: #fff;
-        }
+    <title>HUS Timetable</title>
 
-        header {
-            background-color: #333;
-            width: 100%;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            padding: 0 20px;
-            box-sizing: border-box;
-        }
-
-        /* 2. 画像を囲むコンテナを画面いっぱいに広げて中央揃え */
-        .container {
-            margin-top: 20%; /* コンテナを中央に配置 */
-            display: flex;
-            justify-content: center; /* 横方向の中央揃え */
-            align-items: center;     /* 縦方向の中央揃え */
-            flex-wrap: wrap;         /* 画面が狭いときは折り返す */
-            gap: 20px;               /* 画像と画像の間のすき間 */
-            width: 100%;
-            padding: 10px 20px;      /* 上下に少し余白を持たせる */
-            box-sizing: border-box;
-        }
-        .disable-select {
-        -webkit-user-select: none; /* Safari用 */
-        user-select: none;         /* 標準プロパティ */
-        }
-
-        .bus-stop {
-                    height: 500px;
-                    /* widthを10%から、例えば30%程度に増やす */
-                    /* もしくはピクセル指定で固定サイズにする */
-                    width: 300px; 
-                    max-width: 30%; /* 画面幅が狭いときに崩れないようにする */
-                    
-                    /* (マスクとoverflowはそのまま) */
-                    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 90%, transparent 100%);
-                    mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 90%, transparent 100%);
-                    overflow: hidden; 
-        }
-
-        .logo {
-            width: 100%;
-            display: block;
-            /* fillだと画像が無理やり引き伸ばされるので、比率を維持するcontainを推奨 */
-            object-fit: contain; 
-            transition: transform 0.3s ease;
-            transform: scale(2.05) translateY(60px);
-        }
-
-        /* ホバー時の設定 */
-        .bus-stop:hover .logo {
-            transform: scale(2.1) translateY(50px);
-        }
-    </style>
 </head>
 <body>
-
+    <script src="select.js"></script>
+    <h1 id="bus-stop-title">　</h1>
     <div class="container">
-        <div class="bus-stop">
+        <div class="bus-stop" data-name="北海道科学大学">
             <img src="img/bus-stop_1.png" alt="北海道科学大" class="logo disable-select">
         </div>
-        <div class="bus-stop">
+        <div class="bus-stop" data-name="大学通西">
             <img src="img/bus-stop_0.png" alt="大学通西" class="logo disable-select">
         </div>
-        <div class="bus-stop">
+        <div class="bus-stop" data-name="前田中央通東">
             <img src="img/bus-stop_2.png" alt="前田中央通東" class="logo disable-select">
         </div>
     </div>

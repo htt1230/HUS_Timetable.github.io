@@ -1,3 +1,13 @@
+@import url('https://fonts.googleapis.com/css2?family=LINE+Seed+JP&family=M+PLUS+1:wght@100..900&family=Noto+Sans+JP:wght@100..900&family=Zen+Kaku+Gothic+New&display=swap');
+
+
+.line-seed-jp-regular {
+  font-family: "LINE Seed JP", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+
 body{
     background-color: #232323;
     color: #fff;
@@ -22,15 +32,36 @@ header {
     justify-content: center;
 }
 
-.bus-stop{
-    height: 220px;
-    width: 1000px;
+
+
+.logo {
+    width: 100%;
+    height: 260px;
+    display: block;
+    object-fit: contain; 
+    transition: transform 0.3s ease;
+    transform: scale(2.05) translateY(60px);
 }
 
 
-.logo
-{
-    width: 100%;
-    height: 260px;
-    object-fit: fill;
+.disable-select {
+    -webkit-user-select: none;
+    user-select: none;       
+}
+
+.bus-stop {
+    height: 500px;
+    width: 300px; 
+    max-width: 30%;
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 90%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 90%, transparent 100%);
+    overflow: hidden; /* これがないと中の.logoがはみ出します */
+}
+.bus-stop:hover .logo {
+    transform: scale(2.1) translateY(50px);
+}
+
+h1{
+    text-align: center;
+    font-family: "LINE Seed JP";
 }
