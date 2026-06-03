@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // マウスが乗ったとき：h1 をバス停名に書き換える
         stop.addEventListener('mouseenter', () => {
             if (busName) {
-                titleElement.textContent = busName;
+                titleElement.textContent = `${busName}を見る`;
             }
         });
 
