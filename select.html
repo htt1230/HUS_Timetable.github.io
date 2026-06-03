@@ -35,43 +35,39 @@
             flex-wrap: wrap;         /* 画面が狭いときは折り返す */
             gap: 20px;               /* 画像と画像の間のすき間 */
             width: 100%;
-            padding: 40px 20px;      /* 上下に少し余白を持たせる */
+            padding: 10px 20px;      /* 上下に少し余白を持たせる */
             box-sizing: border-box;
         }
-
-
-        .bus-stop {
-            height: auto;
-            width: 30%;
-            /* マスク設定をここに移動 */
-            -webkit-mask-image: linear-gradient(to bottom, 
-                black 0%,    /* 0%地点から */
-                black 70%,   /* 50%地点までは不透明 */
-                transparent 90%, /* 50%から80%にかけて徐々に透明になり */
-                transparent 100% /* 80%〜100%は完全に透明 */
-            );
-
-            mask-image: linear-gradient(to bottom, 
-                black 0%, 
-                black 70%, 
-                transparent 90%, 
-                transparent 100%
-            );
-            /* はみ出した時の表示制御 */
-            overflow: hidden; 
+        .disable-select {
+        -webkit-user-select: none; /* Safari用 */
+        user-select: none;         /* 標準プロパティ */
         }
 
-        /* 4. 画像自体の設定 */
+        .bus-stop {
+                    height: 500px;
+                    /* widthを10%から、例えば30%程度に増やす */
+                    /* もしくはピクセル指定で固定サイズにする */
+                    width: 300px; 
+                    max-width: 30%; /* 画面幅が狭いときに崩れないようにする */
+                    
+                    /* (マスクとoverflowはそのまま) */
+                    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 90%, transparent 100%);
+                    mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 90%, transparent 100%);
+                    overflow: hidden; 
+        }
+
         .logo {
             width: 100%;
-            display: block; /* 余計な隙間を防ぐ */
-            object-fit: contain;
+            display: block;
+            /* fillだと画像が無理やり引き伸ばされるので、比率を維持するcontainを推奨 */
+            object-fit: contain; 
             transition: transform 0.3s ease;
+            transform: scale(2.05) translateY(60px);
         }
 
         /* ホバー時の設定 */
         .bus-stop:hover .logo {
-            transform: translateY(-20px);
+            transform: scale(2.1) translateY(50px);
         }
     </style>
 </head>
@@ -79,13 +75,13 @@
 
     <div class="container">
         <div class="bus-stop">
-            <img src="img/bus-stop_1.png" alt="北海道科学大" class="logo">
+            <img src="img/bus-stop_1.png" alt="北海道科学大" class="logo disable-select">
         </div>
         <div class="bus-stop">
-            <img src="img/bus-stop_0.png" alt="大学通西" class="logo">
+            <img src="img/bus-stop_0.png" alt="大学通西" class="logo disable-select">
         </div>
         <div class="bus-stop">
-            <img src="img/bus-stop_2.png" alt="前田中央通東" class="logo">
+            <img src="img/bus-stop_2.png" alt="前田中央通東" class="logo disable-select">
         </div>
     </div>
 
