@@ -5,10 +5,89 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>北海道科学大学 バス時刻</title>
+    <style>
+        /* 1. 画面全体の余白をリセット */
+        html, body {
+            margin: 0;
+            padding: 0;;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #232323;
+            color: #fff;
+        }
+
+        header {
+            background-color: #333;
+            width: 100%;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+
+        /* 2. 画像を囲むコンテナを画面いっぱいに広げて中央揃え */
+        .container {
+            margin-top: 20%; /* コンテナを中央に配置 */
+            display: flex;
+            justify-content: center; /* 横方向の中央揃え */
+            align-items: center;     /* 縦方向の中央揃え */
+            flex-wrap: wrap;         /* 画面が狭いときは折り返す */
+            gap: 20px;               /* 画像と画像の間のすき間 */
+            width: 100%;
+            padding: 40px 20px;      /* 上下に少し余白を持たせる */
+            box-sizing: border-box;
+        }
+
+
+        .bus-stop {
+            height: auto;
+            width: 30%;
+            /* マスク設定をここに移動 */
+            -webkit-mask-image: linear-gradient(to bottom, 
+                black 0%,    /* 0%地点から */
+                black 70%,   /* 50%地点までは不透明 */
+                transparent 90%, /* 50%から80%にかけて徐々に透明になり */
+                transparent 100% /* 80%〜100%は完全に透明 */
+            );
+
+            mask-image: linear-gradient(to bottom, 
+                black 0%, 
+                black 70%, 
+                transparent 90%, 
+                transparent 100%
+            );
+            /* はみ出した時の表示制御 */
+            overflow: hidden; 
+        }
+
+        /* 4. 画像自体の設定 */
+        .logo {
+            width: 100%;
+            display: block; /* 余計な隙間を防ぐ */
+            object-fit: contain;
+            transition: transform 0.3s ease;
+        }
+
+        /* ホバー時の設定 */
+        .bus-stop:hover .logo {
+            transform: translateY(-20px);
+        }
+    </style>
 </head>
 <body>
-    <h1>北海道科学大学 バス時刻</h1>
-    <p>バスの時刻を選択してください。</p>
+
+    <div class="container">
+        <div class="bus-stop">
+            <img src="img/shin.jpg" alt="北海道科学大" class="logo">
+        </div>
+        <div class="bus-stop">
+            <img src="img/shin.jpg" alt="大学通西" class="logo">
+        </div>
+        <div class="bus-stop">
+            <img src="img/shin.jpg" alt="前田中央通東" class="logo">
+        </div>
+    </div>
 
 </body>
 </html>

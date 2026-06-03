@@ -1,0 +1,36 @@
+body{
+    background-color: #232323;
+    color: #fff;
+    justify-content: center;
+}
+
+header {
+    background-color: #333;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    box-sizing: border-box;
+}
+
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bus-stop{
+    height: 220px;
+    width: 1000px;
+}
+
+
+.logo
+{
+    width: 100%;
+    height: 260px;
+    object-fit: fill;
+}
