@@ -1,6 +1,26 @@
+const busStopInfo = {
+    '0': {
+        name: "北海道科学大学",
+        direction: "宮の沢駅、手稲駅北口、星置駅行です。"
+    },
+    '1': {
+        name: "大学通西",
+        direction: "手稲駅北口行です。"
+    },
+    '2': {
+        name: "前田中央通",
+        direction: "北24条駅、手稲駅北口、前田森林公園行です。"
+    },
+    '3': {
+        name: "前田6条10丁目",
+        direction: "宮の沢駅、麻生駅方面、手稲駅北口行です。"
+    }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     // 変更対象の h1 要素を取得
     const titleElement = document.getElementById('bus-stop-title');
+    const infoElement = document.getElementById('bus-stop-info');
     // デフォルトのテキストを記憶しておく
     const defaultText = titleElement.textContent;
 
@@ -15,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
         stop.addEventListener('mouseenter', () => {
             if (busName) {
                 titleElement.textContent = `${busName}を見る`;
+                infoElement.textContent = busStopInfo[stop.id].direction;
             }
         });
 
