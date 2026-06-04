@@ -95,7 +95,7 @@ h1 {
 
     /* 300px固定を解除し、画面幅の35%にして2列に収める */
     .bus-stop {
-        min-width: 42%;
+        min-width: 45%;
         max-width: 50%;
         height: 240px; /* スマホ用に高さを半分に */
     }
@@ -103,7 +103,7 @@ h1 {
     /* 画像サイズもスマホに合わせて縮小 */
     .logo {
         height: 150px; 
-        transform: scale(2.05) translateY(25px) !important; /* !importantで初期状態を強制 */
+        transform: scale(2.05) translateY(33px) !important; /* !importantで初期状態を強制 */
     }
 
     /* ★ スマホではPC用のホバー効果を打ち消してOSのバグを防ぐ */
@@ -113,7 +113,7 @@ h1 {
 
     /* スマホで「1回目タップ」された時に、JS経由でズーム演出するためのクラス */
     .bus-stop.active-mobile .logo {
-        transform: scale(2.1) translateY(20px) !important;
+        transform: scale(2.1) translateY(25px) !important;
     }
 
     /* 文字が巨大すぎてハミ出すのを防ぐ */
