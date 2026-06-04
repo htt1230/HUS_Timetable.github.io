@@ -52,13 +52,14 @@ const ROUTE_COLORS = {
     "宮79":     { bg: "#ff8c00", text: "#232323" },
     "循環手48": { bg: "#8eed8e", text: "#232323" },
     "手48":     { bg: "#8eed8e", text: "#232323" },
-    "手85":     { bg: "#4595e6", text: "#232323" },
+    "手85":     { bg: "#99c4f0ff", text: "#232323" },
     "スクール": { bg: "#ffff33", text: "#232323" },
 
-    "麻41"  : { bg: "#d9333f", text: "#ffffff" },
+    "麻41"  : { bg: "#118f01ff", text: "#ffffff" },
     "43"    : { bg: "#d9333f", text: "#ffffff" },
     "北72"  : { bg: "#d9333f", text: "#ffffff" },
-    "宮47"  : { bg: "#d9333f", text: "#ffffff" },
+    "宮47"  : { bg: "#e94a1a", text: "#ffffff" },
+    "宮74"  : { bg: "#80bef7ff", text: "#232323" },
 };
 
 const DEP_TIME_CLASSES = [
@@ -98,30 +99,15 @@ let currentMobileDir = 0; // 初期値は0番目の方面
 const DIRECTION_CONFIG = currentStop.config;
 
 window.onload = async function() {
-    const now = new Date();
-    simHour = now.getHours();
-    simMin = now.getMinutes();
-    
-    const slider = document.getElementById('time-slider');
-    slider.value = simHour * 60 + simMin;
+    // 💡 実時間を取得してセットする処理のみに変更
+    updateCurrentTime();
 
-    slider.addEventListener('input', function() {
-        const totalMinutes = parseInt(this.value, 10);
-        simHour = Math.floor(totalMinutes / 60);
-        simMin = totalMinutes % 60;
-        
-        updateClockDisplay();
-        renderNextBuses();
-    });
-
-    updateClockDisplay();
     buildMobileTabs(); // スマホ用タブボタンの自動生成
 
     try {
         // リクエストURLの動的構築
         const baseUrl = "https://docs.google.com/spreadsheets/d/1FjixtV7RSD3oJ_KskkLw-Pme-5t85rfGqofP2gIRAjg/gviz/tq?tqx=out:json";
         
-        // ★【安全対策】sheet2が存在する場合のみ同時読み込み、無ければsheet1のみ処理する自動分岐
         let fetchPromises = [fetch(`${baseUrl}&sheet=${encodeURIComponent(currentStop.sheet1)}`)];
         if (currentStop.sheet2) {
             fetchPromises.push(fetch(`${baseUrl}&sheet=${encodeURIComponent(currentStop.sheet2)}`));
@@ -130,20 +116,18 @@ window.onload = async function() {
         const responses = await Promise.all(fetchPromises);
         const texts = await Promise.all(responses.map(res => res.text()));
 
-        // 1枚目のデータをパース
         const json1 = responseToJson(texts[0]);
         allData = parseSheetData(json1);
 
-        // 2枚目（sheet2）が存在していれば合算マージ
         if (texts[1]) {
             const json2 = responseToJson(texts[1]);
             const data2 = parseSheetData(json2);
             allData = [...allData, ...data2];
         }
 
-        // 全データを時刻順（hとm）で一発ソート
         allData.sort((a, b) => (a.h * 60 + a.m) - (b.h * 60 + b.m));
 
+        const now = new Date();
         const today = now.getDay();
         if (today === 0) currentDate = '日曜/祝日';
         else if (today === 6) currentDate = '土曜';
@@ -158,12 +142,28 @@ window.onload = async function() {
         
         updateDestDropdown();
         renderTable();
-        renderNextBuses();
+
+        // 💡 1分ごとに実時間を追従させて発車標を自動更新するタイマーを始動
+        setInterval(function() {
+            updateCurrentTime();
+            renderNextBuses();
+        }, 30000); // 30秒ごとにチェック
 
     } catch (error) {
         document.getElementById('loading').innerText = "通信エラー";
     }
 };
+
+// 💡 現在の実時間を取得して内部変数を書き換えるヘルパー関数
+function updateCurrentTime() {
+    const now = new Date();
+    simHour = now.getHours();
+    simMin = now.getMinutes();
+    
+    const h = String(simHour).padStart(2, '0');
+    const m = String(simMin).padStart(2, '0');
+    document.getElementById('current-clock').innerText = `${h}:${m}`;
+}
 
 // モバイル用タブボタン生成関数
 function buildMobileTabs() {
@@ -187,15 +187,6 @@ function changeMobileDir(index) {
     renderNextBuses();
 }
 
-function updateClockDisplay() {
-    const h = String(simHour).padStart(2, '0');
-    const m = String(simMin).padStart(2, '0');
-    const timeStr = `${h}:${m}`;
-    
-    document.getElementById('current-clock').innerText = timeStr;
-    document.getElementById('slider-time-display').innerText = timeStr;
-}
-
 function parseSheetData(json) {
     const rows = json.table.rows;
     let parsed = [];
@@ -214,7 +205,7 @@ function parseSheetData(json) {
             bikou: getVal(row.c[6])
         });
     });
-    return parsed; Greenwood
+    return parsed;
 }
 
 function changeDate(dateType) {
@@ -254,22 +245,19 @@ function renderNextBuses() {
 
     const currentTotalMin = simHour * 60 + simMin;
 
-    // 未来のバスのみ（現在時間以降）を抽出
     const upcoming = targetData.filter(bus => {
         const busTotalMin = bus.h * 60 + bus.m;
         return busTotalMin >= currentTotalMin;
     });
 
     DIRECTION_CONFIG.forEach((dir, index) => {
-        // この方面のバスの中で「発車まで120分(2時間)以内」のものだけを最大3件抽出
         const matchBuses = upcoming.filter(bus => {
             const busTotalMin = bus.h * 60 + bus.m;
             const isMatchDest = dir.dests.includes(bus.dest);
-            const isWithin120Min = (busTotalMin - currentTotalMin) <= 120;
-            return isMatchDest && isWithin120Min;
+            const isWithin450Min = (busTotalMin - currentTotalMin) <= 450;
+            return isMatchDest && isWithin450Min;
         }).slice(0, 3);
 
-        // 選択されている方面かどうかに応じて、モバイル版用の非表示クラス（hide）の付け外しを判定
         let columnHtml = `
             <div id="dir-col-${index}" class="bus-column ${index === currentMobileDir ? '' : 'hide'}">
                 <div style="text-align:center;">
@@ -277,7 +265,6 @@ function renderNextBuses() {
                 </div>
         `;
 
-        // 120分以内に対象のバスがない場合は「なし」枠を表示
         if (matchBuses.length === 0) {
             columnHtml += `
                 <div class="bus-card" style="display: flex; justify-content: center; align-items: center; text-align: center;">
@@ -292,7 +279,6 @@ function renderNextBuses() {
                 const rowClass = rowIndex === 0 ? 'primary' : 'sub-row';
                 const firstBadge = (bus.isFirst == 1) ? '<span class="c-first">始発</span>' : '';
                 
-                // 備考の有無判定と！マークボタン（シングルクォーテーションのエスケープ処理含む）
                 const infoBtnHtml = bus.bikou ? `<button class="c-info-btn" onclick="openModal('${bus.bikou.replace(/'/g, "\\'")}')">！</button>` : '';
                 
                 const routeStyle = getRouteStyle(bus.number);
@@ -321,8 +307,8 @@ function renderNextBuses() {
 
 // モーダル制御ロジック
 function openModal(text) {
-    document.getElementById('modal-text').innerText = text;
-    document.getElementById('bikou-modal').style.display = 'flex';
+        document.getElementById('modal-text').innerHTML = text;
+        document.getElementById('bikou-modal').style.display = 'flex';
 }
 
 function closeModal() {
@@ -351,10 +337,8 @@ function renderTable() {
     displayData.forEach(bus => {
         const minStr = String(bus.m).padStart(2, '0');
         
-        // 1. 始発バッジの生成
         const firstBadge = (bus.isFirst == 1) ? '<span class="c-first" style="margin-left: 4px;">始発</span>' : '';
         
-        // 2. 備考ボタンの生成
         const infoBtnHtml = bus.bikou ? `<button class="c-info-btn" style="margin-left: 4px;" onclick="openModal('${bus.bikou.replace(/'/g, "\\'")}')">❕</button>` : '';
         
         const routeStyle = getRouteStyle(bus.number);
@@ -375,7 +359,6 @@ function renderTable() {
     renderNextBuses();
 }
 
-// スプレッドシートのレスポンスを共通でJSONにするヘルパー関数
 function responseToJson(text) {
     const start = text.indexOf('{');
     const end = text.lastIndexOf('}');
