@@ -4,165 +4,171 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>バス発車標 - 北海道科学大学</title>
-    <link href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic&family=Inter+Tight:wght@700&display=swap" rel="stylesheet">
     
     <style>
-        /* 全体のベース設定 */
+        /* 全全体のベース設定（フォントの自動出し分けを設定） */
         html, body {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-            overflow-x: hidden;
-            background-color: #232323; /* 指定の背景色 */
-            font-family: "BIZ UDGothic", sans-serif;
-            color: #fff;
+            background-color: #ffffff;
+            font-family: "Inter Tight", "BIZ UDGothic", sans-serif;
+            color: #232323;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             user-select: none;
-        }
-        ::-webkit-scrollbar {
-            display: none;
         }
 
         .container {
-            max-width: 900px;
+            max-width: 800px;
             margin: 0 auto;
         }
 
         /* -------------------------------------
-           JR北海道カラー：まもなく発車するバス
+           開発用タイムスライダー
+         ------------------------------------- */
+        .dev-slider-container {
+            background-color: #f9f9f9;
+            border: 1px dashed #f39c12;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        .dev-slider-title {
+            font-weight: bold;
+            color: #e67e22;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .dev-slider {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        /* -------------------------------------
+           直近の発車情報（白地・ミニマル）
         ------------------------------------- */
         .lcd-board {
-            margin-bottom: 30px;
+            margin-bottom: 25px;
+            border: 1px solid #ddd;
         }
         .lcd-header {
-            /* JR北海道のコーポレートカラー：萌黄色グラデーション */
-            background: linear-gradient(to bottom, #00953b, #00752e);
-            color: #fff;
+            background-color: #f5f5f5;
+            color: #232323;
             font-weight: bold;
-            font-size: 20px;
+            font-size: 30px;
             padding: 10px 15px;
-            border: 2px solid #555;
-            border-bottom: none;
-            border-radius: 6px 6px 0 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            border-bottom: 1px solid #ddd;
         }
         
-        /* 3つのカードを並べるコンテナ */
+        #current-clock {
+            font-weight: 700;
+        }
+        
         #lcd-entries {
             display: flex;
-            gap: 15px;
-            padding: 15px;
-            background-color: #111;
-            border: 2px solid #555;
-            border-radius: 0 0 6px 6px;
+            gap: 10px;
+            padding: 10px;
+            background-color: #ffffff;
+            box-sizing: border-box;
         }
 
-        /* 個別のバスカード */
-        .bus-card {
-            background-color: #000;
-            border: 2px solid #444;
-            border-radius: 8px;
-            padding: 15px;
+        /* 方面ごとの縦並びグループ（複数行をまとめるコンテナ） */
+        .bus-column {
             flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.5);
-            position: relative;
+            gap: 6px;
         }
 
-        /* 先頭の直近バスカードに、キハ261新塗装をイメージしたツートン帯を付与 */
-        .bus-card.primary {
-            border-color: #00953b;
-            box-shadow: 0 0 12px rgba(0, 149, 59, 0.4);
-        }
-        .bus-card.primary::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
+        /* 個別のバスカード（各行のスタイル） */
+        .bus-card {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            padding: 10px 12px;
             width: 100%;
-            height: 4px;
-            /* ライトグリーンとラベンダーのツートンライン */
-            background: linear-gradient(to right, #8cc63f 65%, #9b59b6 65%);
-            border-radius: 6px 6px 0 0;
+            height: 70px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            border-width: 2.2px;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* 影の指定 */
         }
 
-        /* --- 1行目 (系統, 行き先) --- */
+        /* 先頭（一番上の行）の枠線を黒く強調 */
+        .bus-card.primary {
+        border-color: #404344;
+
+        }
+
+        /* 2本目以降の行 */
+        .bus-card.sub-row {
+            background-color: #fafafa;
+        }
+
+        /* 1行目 (系統, 時間) */
         .card-row-1 {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
-        /* 車両前頭部をイメージしたカンゾウイエロー */
+        .c-dir-name {
+            font-size: 20px;
+            color: #232323;
+            text-align: center;
+        }
         .c-route {
-            background-color: #f39c12; 
-            color: #000;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-weight: bold;
-            font-size: 15px;
-        }
-        .c-dest {
-            color: #fff;
-            font-size: 18px;
+            background-color: #333;
+            border-radius: 5px;
+            color: #ffffff;
+            padding: 2px 6px;
+            font-size: 14px;
             font-weight: bold;
         }
 
-        /* --- 2行目 (時間, 始発, カウントダウン) --- */
+        .c-time {
+            font-weight: 700;
+            font-size: 24px;
+            line-height: 1;
+            margin-left: auto;
+        }
+
+        /* 2行目 (行き先, 始発, カウントダウン) */
         .card-row-2 {
             display: flex;
             align-items: flex-end;
-            gap: 8px;
+            gap: 6px;
         }
-        .c-time {
-            color: #fff; /* 定刻は新雪の白 */
-            font-size: 32px;
+        .c-dest {
+            font-size: 16px;
             font-weight: bold;
-            line-height: 1;
-            letter-spacing: 1px;
         }
-        /* ラベンダーパープルをイメージした始発バッジ */
         .c-first {
-            background-color: #8e44ad; 
             color: #fff;
-            font-size: 11px;
-            padding: 2px 5px;
-            border-radius: 3px;
-            font-weight: bold;
-            margin-bottom: 3px;
+            font-size: 10px;
+            margin-left: 2px;
+            background-color: #dd3333;
+            padding: 1px 4px;
+            border-radius: 4px;
         }
         .c-countdown {
             margin-left: auto;
-            color: #8cc63f; /* カウントダウンは鮮やかな黄緑 */
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 3px;
+            color: #666;
+            font-size: 13px;
         }
 
-        /* --- 3行目 (備考スクロール) --- */
+        /* 3行目 (備考) */
         .card-row-3 {
-            height: 18px;
-            position: relative;
-            overflow: hidden;
-            border-top: 1px dashed #333;
-            padding-top: 8px;
-        }
-        .scroll-text {
-            color: #e74c3c; /* 警告・備考は赤 */
-            font-size: 13px;
-            display: inline-block;
-            white-space: nowrap;
-            position: absolute;
-            left: 100%;
-            animation: scroll-left 8s linear infinite;
-        }
-        @keyframes scroll-left {
-            0% { left: 100%; }
-            100% { left: -100%; }
+            font-size: 11px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 4px;
+            margin-top: 2px;
         }
 
         /* -------------------------------------
@@ -171,128 +177,195 @@
         .tabs {
             display: flex;
             margin-bottom: 15px;
-            border-radius: 6px;
-            overflow: hidden;
-            background: #111;
-            border: 1px solid #444;
+            border: 1px solid #ddd;
         }
         .tab {
             flex: 1;
             text-align: center;
-            padding: 12px;
+            padding: 10px;
             cursor: pointer;
             color: #888;
-            font-weight: bold;
-            border-right: 1px solid #444;
-            transition: 0.2s;
+            font-size: 14px;
+            background-color: #fafafa;
         }
-        .tab:last-child { border-right: none; }
+        .tab:not(:last-child) {
+            border-right: 1px solid #ddd;
+        }
         .tab.active {
-            background: #00953b; /* アクティブ時は萌黄色 */
-            color: #fff;
+            background: #ffffff;
+            color: #232323;
+            font-weight: bold;
         }
 
         .filter-container {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             display: flex;
             align-items: center;
-            gap: 15px;
-            background: #111;
-            padding: 15px;
-            border-radius: 6px;
-            border: 1px solid #444;
+            gap: 10px;
+            font-size: 14px;
         }
         select {
-            background: #222;
-            color: #fff;
-            border: 1px solid #555;
-            padding: 8px 12px;
-            border-radius: 4px;
+            background: #ffffff;
+            color: #232323;
+            border: 1px solid #ddd;
+            padding: 6px 10px;
             font-family: inherit;
-            font-size: 16px;
-            cursor: pointer;
+            font-size: 14px;
             outline: none;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            background: #111;
-            border: 1px solid #444;
+            border: 1px solid #ddd;
+            font-size: 14px;
         }
         th, td {
-            padding: 12px;
+            padding: 10px;
             text-align: center;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid #ddd;
         }
-        th { background-color: #222; color: #f39c12; font-size: 14px; }
-        .table-time { font-size: 20px; font-weight: bold; color: #fff; }
+        th {
+            background-color: #f5f5f5;
+            color: #666;
+            font-weight: normal;
+        }
+        
+        .table-time {
+            font-weight: 700;
+            font-size: 20px;
+        }
 
         #loading, #no-data {
             text-align: center;
-            padding: 40px;
-            font-size: 18px;
-            color: #aaa;
+            padding: 30px;
+            font-size: 14px;
+            color: #666;
         }
 
-        /* スマホ向けにカードを縦並びに */
-        @media (max-width: 650px) {
+        @media (max-width: 600px) {
             #lcd-entries { flex-direction: column; }
-            .bus-card.primary::before { border-radius: 6px 6px 0 0; }
         }
+
+        /* テーブルの列幅の指定 */
+        #timetable th:nth-child(1), #timetable td:nth-child(1) { width: 20%; } 
+        #timetable th:nth-child(2), #timetable td:nth-child(2) { width: 35%; } 
+        #timetable th:nth-child(3), #timetable td:nth-child(3) { width: 10%; } 
+        #timetable th:nth-child(4), #timetable td:nth-child(4) { width: 15%; } 
+        #timetable th:nth-child(5), #timetable td:nth-child(5) { width: 20%; } 
     </style>
 </head>
 <body>
 
 <div class="container">
     
+    <div class="dev-slider-container">
+        <div class="dev-slider-title">
+            <span>⚙️ 開発用時間シミュレーター (スライダーを動かすと時間を変更できます)</span>
+            <span id="slider-time-display">00:00</span>
+        </div>
+        <input type="range" id="time-slider" class="dev-slider" min="0" max="1439" value="0">
+    </div>
+    
     <div class="lcd-board" id="lcd-board" style="display: none;">
         <div class="lcd-header">
-            <span>まもなく発車するバス</span>
+            <span></span>
             <span id="current-clock">--:--</span>
         </div>
-        <div id="lcd-entries">
-            </div>
+        <div id="lcd-entries"></div>
     </div>
 
     <div class="tabs">
         <div class="tab" id="tab-平日" onclick="changeDate('平日')">平日</div>
         <div class="tab" id="tab-土曜" onclick="changeDate('土曜')">土曜</div>
-        <div class="tab" id="tab-日曜/祝日" onclick="changeDate('日曜/祝日')">日曜/祝日</div>
+        <div class="tab" id="tab-日曜/祝日" onclick="changeDate('日曜/祝日')">日祝</div>
     </div>
 
     <div class="filter-container" id="filter-ui" style="display: none;">
         <label for="dest-select">行き先:</label>
-        <select id="dest-select" onchange="renderTable()">
-            </select>
+        <select id="dest-select" onchange="renderTable()"></select>
     </div>
 
-    <div id="loading">発車標データを取得中...</div>
+    <div id="loading">データを取得中...</div>
     <div id="no-data" style="display: none;">本日の運行は終了しました。</div>
 
     <table id="timetable" style="display: none;">
         <thead>
             <tr>
-                <th>定刻</th>
                 <th>系統</th>
                 <th>行き先</th>
+                <th></th>
+                <th>時刻</th>
                 <th>備考</th>
             </tr>
         </thead>
-        <tbody id="table-body">
-            </tbody>
+        <tbody id="table-body"></tbody>
     </table>
 </div>
 
 <script>
     const SHEET_URL = "https://docs.google.com/spreadsheets/d/1FjixtV7RSD3oJ_KskkLw-Pme-5t85rfGqofP2gIRAjg/gviz/tq?tqx=out:json&sheet=北海道科学大学";
     
+    // 【一般化規定】上部のカード（lcd-board）に表示するグループと対象の行先
+    const DIRECTION_CONFIG = [
+        { name: "手稲駅方面", dests: ["手稲駅北口"] },
+        { name: "星置駅方面",   dests: ["星置駅"] },
+        { name: "宮の沢方面",   dests: ["宮の沢駅"] }
+    ];
+
+    // 系統ごとの背景色と文字色の辞書
+    const ROUTE_COLORS = {
+        "宮79":     { bg: "#ff8c00", text: "#232323" },
+        "循環手48": { bg: "#8eed8e", text: "#232323" },
+        "手48":     { bg: "#8eed8e", text: "#232323" },
+        "手85":     { bg: "#4595e6", text: "#232323" }
+    };
+
+    const DEP_TIME_CLASSES = [
+        { maxMin: 1,  color: "#ff3b30" }, 
+        { maxMin: 3,  color: "#ffaa00" }, 
+        { maxMin: 10, color: "#009900" }  
+    ];
+
+    const DEFAULT_TIME_COLOR = "#8e8e93"; 
+    const DEFAULT_ROUTE_COLOR = { bg: "#333333", text: "#ffffff" };
+
+    function getRouteStyle(routeNumber) {
+        const color = ROUTE_COLORS[routeNumber] || DEFAULT_ROUTE_COLOR;
+        return `background-color: ${color.bg}; color: ${color.text};`;
+    }
+
+    function getDepartureTimeColor(depmin) {
+        for (const range of DEP_TIME_CLASSES) {
+            if (depmin <= range.maxMin) return `color: ${range.color};`;
+        }
+        return `color: ${DEFAULT_TIME_COLOR};`;
+    }
+
     let allData = [];
     let currentDate = '平日';
+    
+    let simHour = 0;
+    let simMin = 0;
 
     window.onload = async function() {
-        setInterval(updateClock, 1000);
-        updateClock();
+        const now = new Date();
+        simHour = now.getHours();
+        simMin = now.getMinutes();
+        
+        const slider = document.getElementById('time-slider');
+        slider.value = simHour * 60 + simMin;
+
+        slider.addEventListener('input', function() {
+            const totalMinutes = parseInt(this.value, 10);
+            simHour = Math.floor(totalMinutes / 60);
+            simMin = totalMinutes % 60;
+            
+            updateClockDisplay();
+            renderNextBuses(); 
+        });
+
+        updateClockDisplay();
 
         try {
             const response = await fetch(SHEET_URL);
@@ -304,7 +377,7 @@
             
             allData = parseSheetData(json);
             
-            const today = new Date().getDay();
+            const today = now.getDay();
             if (today === 0) currentDate = '日曜/祝日';
             else if (today === 6) currentDate = '土曜';
             else currentDate = '平日';
@@ -320,18 +393,18 @@
             renderTable();
             renderNextBuses();
 
-            setInterval(renderNextBuses, 60000);
-
         } catch (error) {
-            document.getElementById('loading').innerText = "通信エラー：データが取得できません";
+            document.getElementById('loading').innerText = "通信エラー";
         }
     };
 
-    function updateClock() {
-        const now = new Date();
-        const h = String(now.getHours()).padStart(2, '0');
-        const m = String(now.getMinutes()).padStart(2, '0');
-        document.getElementById('current-clock').innerText = `${h}:${m}`;
+    function updateClockDisplay() {
+        const h = String(simHour).padStart(2, '0');
+        const m = String(simMin).padStart(2, '0');
+        const timeStr = `${h}:${m}`;
+        
+        document.getElementById('current-clock').innerText = timeStr;
+        document.getElementById('slider-time-display').innerText = timeStr;
     }
 
     function parseSheetData(json) {
@@ -359,7 +432,7 @@
         currentDate = dateType;
         document.querySelectorAll('.tab').forEach(tab => {
             tab.classList.remove('active');
-            if(tab.innerText === dateType) tab.classList.add('active');
+            if(tab.getAttribute('onclick').includes(dateType)) tab.classList.add('active');
         });
         updateDestDropdown();
         renderTable();
@@ -371,7 +444,7 @@
         const currentData = allData.filter(d => d.date === currentDate);
         const uniqueDests = [...new Set(currentData.map(d => d.dest))].filter(d => d !== '');
         
-        select.innerHTML = '<option value="all">すべて表示</option>';
+        select.innerHTML = '<option value="all">すべて</option>';
         uniqueDests.forEach(dest => {
             const option = document.createElement('option');
             option.value = dest;
@@ -380,14 +453,9 @@
         });
     }
 
-    // 3つのカードを描画する処理
     function renderNextBuses() {
         const container = document.getElementById('lcd-entries');
         container.innerHTML = '';
-
-        const now = new Date();
-        const currentHour = now.getHours();
-        const currentMin = now.getMinutes();
 
         const selectedDest = document.getElementById('dest-select').value;
         let targetData = allData.filter(d => d.date === currentDate);
@@ -395,47 +463,76 @@
             targetData = targetData.filter(d => d.dest === selectedDest);
         }
 
+        const currentTotalMin = simHour * 60 + simMin;
+
+        // ★【ロジック変更】未来のバスのみ（現在時間以降）をいったん抽出
         const upcoming = targetData.filter(bus => {
-            return (bus.h > currentHour) || (bus.h === currentHour && bus.m >= currentMin);
+            const busTotalMin = bus.h * 60 + bus.m;
+            return busTotalMin >= currentTotalMin;
         });
 
-        const next3 = upcoming.slice(0, 3);
+        DIRECTION_CONFIG.forEach((dir) => {
+            // この方面のバスの中で「発車まで120分(2時間)以内」のものだけを最大3件抽出
+            const matchBuses = upcoming.filter(bus => {
+                const busTotalMin = bus.h * 60 + bus.m;
+                const isMatchDest = dir.dests.includes(bus.dest);
+                const isWithin120Min = (busTotalMin - currentTotalMin) <= 120; // ★ここが発車120分前制限
+                return isMatchDest && isWithin120Min;
+            }).slice(0, 3);
 
-        if (next3.length === 0) {
-            container.innerHTML = '<div style="color:#777; text-align:center; width:100%; padding:20px;">現在、表示できる運行情報はありません。</div>';
-            return;
-        }
-
-        next3.forEach((bus, index) => {
-            const diffMin = (bus.h * 60 + bus.m) - (currentHour * 60 + currentMin);
-            const minStr = String(bus.m).padStart(2, '0');
-            
-            const isPrimary = index === 0 ? 'primary' : '';
-            const firstBadge = (bus.isFirst == 1) ? '<span class="c-first">始発</span>' : '';
-            const bikouHtml = bus.bikou ? `<span class="scroll-text">${bus.bikou}</span>` : '';
-
-            container.innerHTML += `
-                <div class="bus-card ${isPrimary}">
-                    <div class="card-row-1">
-                        <span class="c-route">${bus.number}</span>
-                        <span class="c-dest">${bus.dest}</span>
+            let columnHtml = `
+                <div class="bus-column">
+                    <div style="text-align:center;">
+                        <span class="c-dir-name">${dir.name}</span>
                     </div>
-                    
-                    <div class="card-row-2">
-                        <span class="c-time">${bus.h}:${minStr}</span>
-                        ${firstBadge}
-                        <span class="c-countdown">あと ${diffMin}分</span>
-                    </div>
-                    
-                    <div class="card-row-3">
-                        ${bikouHtml}
-                    </div>
-                </div>
             `;
+
+            // 120分以内に対象のバスがない場合は、空欄にせず「運行情報なし」枠を表示
+            if (matchBuses.length === 0) {
+                columnHtml += `
+                    <div class="bus-card">
+                        <div class="card-row-1">
+                            <span class="c-time" style="font-size:16px; color:#aaa;">なし</span>
+                        </div>
+                        <div class="card-row-2">
+                            <span class="c-dest" style="font-size:14px; color:#aaa;">120分以内の発車なし</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                matchBuses.forEach((bus, rowIndex) => {
+                    const diffMin = (bus.h * 60 + bus.m) - currentTotalMin;
+                    const minStr = String(bus.m).padStart(2, '0');
+                    
+                    const rowClass = rowIndex === 0 ? 'primary' : 'sub-row';
+                    const firstBadge = (bus.isFirst == 1) ? '<span class="c-first">始発</span>' : '';
+                    const bikouHtml = bus.bikou ? `<div class="card-row-3">${bus.bikou}</div>` : '';
+                    
+                    const routeStyle = getRouteStyle(bus.number);
+                    const depTimeColor = getDepartureTimeColor(diffMin);
+
+                    columnHtml += `
+                        <div class="bus-card ${rowClass}">
+                            <div class="card-row-1">
+                                <span class="c-route" style="${routeStyle}">${bus.number}</span>
+                                <span class="c-time">${bus.h}:${minStr}</span>
+                            </div>
+                            <div class="card-row-2">
+                                <span class="c-dest">${bus.dest}</span>
+                                ${firstBadge}
+                                <span class="c-countdown">あと<span style="font-size:18px; ${depTimeColor}">${diffMin}分</span></span>
+                            </div>
+                            ${bikouHtml}
+                        </div>
+                    `;
+                });
+            }
+
+            columnHtml += `</div>`;
+            container.innerHTML += columnHtml;
         });
     }
 
-    // テーブル描画
     function renderTable() {
         const tbody = document.getElementById('table-body');
         const selectedDest = document.getElementById('dest-select').value;
@@ -457,14 +554,17 @@
 
         displayData.forEach(bus => {
             const minStr = String(bus.m).padStart(2, '0');
-            const firstBadge = (bus.isFirst == 1) ? '<span style="color:#8e44ad; font-size:12px; margin-left:5px;">[始発]</span>' : '';
+            const firstBadge = (bus.isFirst == 1) ? '<span class="c-first">始発</span>' : '';
+            
+            const routeStyle = getRouteStyle(bus.number);
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><span class="table-time">${bus.h}:${minStr}</span> ${firstBadge}</td>
-                <td><span class="c-route" style="font-size:14px; padding:2px 6px;">${bus.number}</span></td>
+                <td><span class="c-route" style="${routeStyle}">${bus.number}</span></td>
                 <td>${bus.dest}</td>
-                <td style="color:#aaa; font-size:14px;">${bus.bikou}</td>
+                <td>${firstBadge}</td>
+                <td><span class="table-time">${bus.h}:${minStr}</span></td>
+                <td style="color:#666; font-size:13px;">${bus.bikou}</td>
             `;
             tbody.appendChild(tr);
         });

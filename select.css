@@ -58,7 +58,8 @@ header {
 
 .bus-stop {
     height: 500px;
-    width: 300px; 
+    max-width: 300px;
+    min-width: 300px; 
     max-width: 30%;
     -webkit-mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 90%, transparent 100%);
     mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 90%, transparent 100%);
