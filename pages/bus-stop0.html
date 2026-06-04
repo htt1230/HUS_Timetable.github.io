@@ -17,17 +17,44 @@
 
     <header>
         <div class="current-time">
-            <a id="bus-stop-link" href="https://maps.app.goo.gl/aqJjiw3sopQYFqAj9"><span id="current-bus-stop">----</span></a>&nbsp;
+            <a href="../select.html" style="padding-right: 10px; text-decoration-line: none; color: #232323;"><b>＜</b></a><a id="bus-stop-link" href="https://maps.app.goo.gl/aqJjiw3sopQYFqAj9"><span id="current-bus-stop">----</span></a> 
             <span id="current-clock">--:--</span>
         </div>
     </header>
 
+    <div class="lcd-board" id="skeleton-lcd">
+        <div class="lcd-header">
+            <span>
+                <div class="skeleton-tab"></div>
+                <div class="skeleton-tab"></div>
+            </span>
+        </div>
+        <div class="skeleton-entries">
+            <div class="skeleton-column">
+                <div class="skeleton-title"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+            </div>
+            <div class="skeleton-column">
+                <div class="skeleton-title"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+            </div>
+            <div class="skeleton-column">
+                <div class="skeleton-title"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+            </div>
+        </div>
+    </div>
     <div class="lcd-board" id="lcd-board" style="display: none;">
         <div class="lcd-header">
             <span>
                 <span id="mobile-dir-tabs" style="display: none;"></span>
             </span>
-            
         </div>
         <div id="lcd-entries"></div>
     </div>
@@ -43,9 +70,39 @@
         <select id="dest-select" onchange="renderTable()"></select>
     </div>
 
-    <div id="loading">データを取得中...</div>
+    <div id="loading" style="display: none; text-align: center; padding: 30px; color: #666;"></div>
     <div id="no-data" style="display: none;">本日の運行は終了しました。</div>
 
+    <table id="skeleton-table">
+    <thead>
+        <tr>
+            <th style="width: 30%;">系統</th>
+            <th style="width: 35%;">行先</th>
+            <th style="width: 20%;">時刻</th>
+            <th style="width: 15%;">始発</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+    </tbody>
+</table>
     <table id="timetable" style="display: none;">
         <thead>
             <tr>
@@ -65,6 +122,8 @@
         <button class="modal-close-btn" onclick="closeModal()">閉じる</button>
     </div>
 </div>
+
+<a href="../select.html">トップページへ戻る</a>
 
 <script src="../bus-stop.js"></script>
 

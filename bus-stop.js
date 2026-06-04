@@ -112,7 +112,7 @@ window.onload = async function() {
         busStopLabel.innerText = currentStop.sheet1;
     }
 
-    busStopLabel.innerHTML += `<img src="../img/maps_pin.png" alt="地図" style="width: 16px; height: auto; vertical-align: middle;">`;
+    busStopLabel.innerHTML += `<img src="../img/maps_pin.png" alt="地図" style="width: 16px; height: auto; vertical-align: middle; margin-left: 4px;">`;
     
     // ★HTML側にスライダー（#time-slider）があるかチェック
     const slider = document.getElementById('time-slider');
@@ -174,28 +174,53 @@ window.onload = async function() {
         else if (today === 6) currentDate = '土曜';
         else currentDate = '平日';
         
+// ... (省略) ...
         document.getElementById('tab-' + currentDate).classList.add('active');
 
-        document.getElementById('loading').style.display = 'none';
+        // 👇👇 ここを書き換え（スケルトンを隠して本物を出す） 👇👇
+        const skLcd = document.getElementById('skeleton-lcd');
+        if (skLcd) skLcd.style.display = 'none';
+        
+        const skTable = document.getElementById('skeleton-table');
+        if (skTable) skTable.style.display = 'none';
+
+        const loadingEl = document.getElementById('loading');
+        if (loadingEl) loadingEl.style.display = 'none';
+
         document.getElementById('lcd-board').style.display = 'block';
         document.getElementById('filter-ui').style.display = 'flex';
         document.getElementById('timetable').style.display = 'table';
+        // 👆👆 ここまで 👆👆
         
         updateDestDropdown();
         renderTable();
 
     } catch (error) {
-        document.getElementById('loading').innerText = "通信エラー";
+        // 👇👇 エラー時もスケルトンを隠してエラー文字を出す 👇👇
+        const skLcd = document.getElementById('skeleton-lcd');
+        if (skLcd) skLcd.style.display = 'none';
+        
+        const skTable = document.getElementById('skeleton-table');
+        if (skTable) skTable.style.display = 'none';
+        
+        const loadingEl = document.getElementById('loading');
+        if (loadingEl) {
+            loadingEl.style.display = 'block';
+            loadingEl.innerText = "通信エラー";
+        }
+        // 👆👆 ここまで 👆👆
     }
 };
 
+// 現在の実時間を取得して内部変数を書き換えるヘルパー関数
 // 現在の実時間を取得して内部変数を書き換えるヘルパー関数
 function updateCurrentTime() {
     const now = new Date();
     simHour = now.getHours();
     simMin = now.getMinutes();
     
-    const h = String(simHour).padStart(2, '0');
+    // ★ h の「.padStart(2, '0')」を削除！
+    const h = String(simHour);
     const m = String(simMin).padStart(2, '0');
     
     const clockEl = document.getElementById('current-clock');
@@ -205,7 +230,8 @@ function updateCurrentTime() {
 }
 
 function updateClockDisplay() {
-    const h = String(simHour).padStart(2, '0');
+    // ★ h の「.padStart(2, '0')」を削除！
+    const h = String(simHour);
     const m = String(simMin).padStart(2, '0');
     const timeStr = `${h}:${m}`;
     
@@ -214,7 +240,6 @@ function updateClockDisplay() {
         clockEl.innerText = timeStr;
     }
     
-    // ★【安全ガード】HTMLに文字表示用の要素が「実在する場合のみ」書き換えるように修正
     const sliderDisplay = document.getElementById('slider-time-display');
     if (sliderDisplay) {
         sliderDisplay.innerText = timeStr;
