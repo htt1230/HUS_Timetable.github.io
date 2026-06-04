@@ -114,6 +114,14 @@ window.onload = async function() {
 
     busStopLabel.innerHTML += `<img src="../img/maps_pin.png" alt="地図" style="width: 16px; height: auto; vertical-align: middle; margin-left: 4px;">`;
     
+    // 👇👇👇 ここを追加！ 👇👇👇
+    // マスターデータの mapUrl を <a> タグのリンク先にセットする
+    const busStopLink = document.getElementById('bus-stop-link');
+    if (busStopLink && currentStop.mapUrl) {
+        busStopLink.href = currentStop.mapUrl;
+    }
+    // 👆👆👆 ここまで 👆👆👆
+
     // ★HTML側にスライダー（#time-slider）があるかチェック
     const slider = document.getElementById('time-slider');
 
@@ -396,6 +404,19 @@ function renderNextBuses() {
                 `;
             });
         }
+
+        // 👇👇👇 ここから追加 👇👇👇
+        // 北海道科学大学 (id='0') かつ、手稲駅方面 (index=0) の列の一番下に追加
+        if (busStopId === '0' && index === 0) {
+            columnHtml += `
+                <a href="?id=1" style="text-decoration: none;">
+                    <div class="bus-card" style="background-color: #ebebebff; border: 2px solid #9c9a98ff; display: flex; justify-content: center; align-items: center; height: 40px; margin-top: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.15);">
+                        <span style="font-size: 16px; color: #232323; font-weight: bold;">乗り遅れた？</span>
+                    </div>
+                </a>
+            `;
+        }
+        // 👆👆👆 ここまで追加 👆👆👆
 
         columnHtml += `</div>`;
         container.innerHTML += columnHtml;
