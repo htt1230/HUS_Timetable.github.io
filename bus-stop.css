@@ -13,6 +13,9 @@
             margin: 0 auto;
         }
 
+        header {
+            padding: 10px 15px;
+        }
         /* -------------------------------------
            開発用タイムスライダー
          ------------------------------------- */
@@ -54,14 +57,27 @@
             border-bottom: 1px solid #ddd;
         }
         
+.current-time {
+            display: flex;         /* ★これを追加！中の要素が横並びになります */
+            align-items: center;   /* ★バス停名と時計の「縦の高さ」がズレないように中央で揃える */
+            font-size: 25px;
+            color: #222222;
+        }
+        
         #current-clock {
             font-weight: 700;
+            margin-left: auto;     /* 親がflexになったので、これで右端まで押し出されます！ */
         }
-        .current-time {
-            font-size: 40px;
-            color: #222222;
-            text-align: right;
+
+        #current-bus-stop{
+            font-weight: bold;
+            color: #232323;
         }
+
+        #bus-stop-link{
+            text-decoration: none; /* リンクの下線を消す */
+        }
+
         #lcd-entries {
             display: flex;
             gap: 10px;

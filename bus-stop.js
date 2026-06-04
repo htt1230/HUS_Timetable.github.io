@@ -3,11 +3,13 @@ const urlParams = new URLSearchParams(window.location.search);
 const busStopId = urlParams.get('id') || '0'; // 指定がなければデフォルトで '0'
 
 // 【マスター規定】ご提示いただいた最新の規定
+// 【マスター規定】ご提示いただいた最新の規定に mapUrl を追加！
 const BUS_STOP_MASTERS = {
     '0': {
         title: "バス発車標 - 北海道科学大学",
         sheet1: "北海道科学大学",
         sheet2: "school",
+        mapUrl: "https://maps.app.goo.gl/wS4J1GbedkcmbLpf8", // ★ここを追加（科学大バス停のURL）
         config: [
             { name: "手稲駅方面", dests: ["手稲駅北口"] },
             { name: "星置駅方面",   dests: ["星置駅"] },
@@ -17,6 +19,7 @@ const BUS_STOP_MASTERS = {
     '1': {
         title: "バス発車標 - 大学通西",
         sheet1: "大学通西",
+        mapUrl: "https://maps.app.goo.gl/Kd5TTFDJTviUZeGUA", // ★ここを追加（大学通西のURL）
         config: [
             { name: "手稲駅方面", dests: ["手稲駅北口"] }
         ]
@@ -24,6 +27,7 @@ const BUS_STOP_MASTERS = {
     '2': {
         title: "バス発車標 - 前田中央通",
         sheet1: "前田中央通",
+        mapUrl: "https://maps.app.goo.gl/RAWR9t7fngMfSj27A", // ★ここを追加
         config: [
             { name: "北24条駅方面", dests: ["北２４条駅前"] },
             { name: "手稲駅方面", dests: ["手稲駅北口"] },
@@ -33,6 +37,7 @@ const BUS_STOP_MASTERS = {
     '3': {
         title: "バス発車標 - 前田6条10丁目",
         sheet1: "前田6条10丁目",
+        mapUrl: "https://maps.app.goo.gl/aqJjiw3sopQYFqAj9", // ★ここを追加
         config: [
             { name: "麻生花畔方面", dests: ["地下鉄麻生駅","花畔"] },
             { name: "手稲駅方面", dests: ["手稲駅北口"] },
@@ -99,8 +104,45 @@ let currentMobileDir = 0; // 初期値は0番目の方面
 const DIRECTION_CONFIG = currentStop.config;
 
 window.onload = async function() {
-    // 💡 実時間を取得してセットする処理のみに変更
-    updateCurrentTime();
+    const now = new Date();
+
+    // 💡 画面要素にバス停名を挿入
+    const busStopLabel = document.getElementById('current-bus-stop');
+    if (busStopLabel) {
+        busStopLabel.innerText = currentStop.sheet1;
+    }
+
+    busStopLabel.innerHTML += `<img src="../img/maps_pin.png" alt="地図" style="width: 16px; height: auto; vertical-align: middle;">`;
+    
+    // ★HTML側にスライダー（#time-slider）があるかチェック
+    const slider = document.getElementById('time-slider');
+
+    if (slider) {
+        // 【スライダーが存在する場合：シミュレーターモード】
+        simHour = now.getHours();
+        simMin = now.getMinutes();
+        slider.value = simHour * 60 + simMin;
+
+        slider.addEventListener('input', function() {
+            const totalMinutes = parseInt(this.value, 10);
+            simHour = Math.floor(totalMinutes / 60);
+            simMin = totalMinutes % 60;
+            
+            updateClockDisplay();
+            renderNextBuses();
+        });
+        
+        updateClockDisplay();
+    } else {
+        // 【スライダーがない場合：実時間連動モード】
+        updateCurrentTime();
+        
+        // 30秒ごとに実時間を追いかけるタイマーを起動
+        setInterval(function() {
+            updateCurrentTime();
+            renderNextBuses();
+        }, 30000);
+    }
 
     buildMobileTabs(); // スマホ用タブボタンの自動生成
 
@@ -127,7 +169,6 @@ window.onload = async function() {
 
         allData.sort((a, b) => (a.h * 60 + a.m) - (b.h * 60 + b.m));
 
-        const now = new Date();
         const today = now.getDay();
         if (today === 0) currentDate = '日曜/祝日';
         else if (today === 6) currentDate = '土曜';
@@ -143,18 +184,12 @@ window.onload = async function() {
         updateDestDropdown();
         renderTable();
 
-        // 💡 1分ごとに実時間を追従させて発車標を自動更新するタイマーを始動
-        setInterval(function() {
-            updateCurrentTime();
-            renderNextBuses();
-        }, 30000); // 30秒ごとにチェック
-
     } catch (error) {
         document.getElementById('loading').innerText = "通信エラー";
     }
 };
 
-// 💡 現在の実時間を取得して内部変数を書き換えるヘルパー関数
+// 現在の実時間を取得して内部変数を書き換えるヘルパー関数
 function updateCurrentTime() {
     const now = new Date();
     simHour = now.getHours();
@@ -162,12 +197,35 @@ function updateCurrentTime() {
     
     const h = String(simHour).padStart(2, '0');
     const m = String(simMin).padStart(2, '0');
-    document.getElementById('current-clock').innerText = `${h}:${m}`;
+    
+    const clockEl = document.getElementById('current-clock');
+    if (clockEl) {
+        clockEl.innerText = `${h}:${m}`;
+    }
+}
+
+function updateClockDisplay() {
+    const h = String(simHour).padStart(2, '0');
+    const m = String(simMin).padStart(2, '0');
+    const timeStr = `${h}:${m}`;
+    
+    const clockEl = document.getElementById('current-clock');
+    if (clockEl) {
+        clockEl.innerText = timeStr;
+    }
+    
+    // ★【安全ガード】HTMLに文字表示用の要素が「実在する場合のみ」書き換えるように修正
+    const sliderDisplay = document.getElementById('slider-time-display');
+    if (sliderDisplay) {
+        sliderDisplay.innerText = timeStr;
+    }
 }
 
 // モバイル用タブボタン生成関数
 function buildMobileTabs() {
     const mTabs = document.getElementById('mobile-dir-tabs');
+    if (!mTabs) return;
+    
     mTabs.innerHTML = '';
     DIRECTION_CONFIG.forEach((dir, idx) => {
         mTabs.innerHTML += `
@@ -221,6 +279,8 @@ function changeDate(dateType) {
 
 function updateDestDropdown() {
     const select = document.getElementById('dest-select');
+    if (!select) return;
+    
     const currentData = allData.filter(d => d.date === currentDate);
     const uniqueDests = [...new Set(currentData.map(d => d.dest))].filter(d => d !== '');
     
@@ -235,9 +295,13 @@ function updateDestDropdown() {
 
 function renderNextBuses() {
     const container = document.getElementById('lcd-entries');
+    if (!container) return;
+    
     container.innerHTML = '';
 
-    const selectedDest = document.getElementById('dest-select').value;
+    const selectEl = document.getElementById('dest-select');
+    const selectedDest = selectEl ? selectEl.value : 'all';
+    
     let targetData = allData.filter(d => d.date === currentDate);
     if (selectedDest !== 'all') {
         targetData = targetData.filter(d => d.dest === selectedDest);
@@ -307,17 +371,27 @@ function renderNextBuses() {
 
 // モーダル制御ロジック
 function openModal(text) {
-        document.getElementById('modal-text').innerHTML = text;
-        document.getElementById('bikou-modal').style.display = 'flex';
+    const modalTextEl = document.getElementById('modal-text');
+    const modalEl = document.getElementById('bikou-modal');
+    if (modalTextEl && modalEl) {
+        modalTextEl.innerHTML = text;
+        modalEl.style.display = 'flex';
+    }
 }
 
+// モーダル閉じるロジック
 function closeModal() {
-    document.getElementById('bikou-modal').style.display = 'none';
+    const modalEl = document.getElementById('bikou-modal');
+    if (modalEl) modalEl.style.display = 'none';
 }
 
 function renderTable() {
     const tbody = document.getElementById('table-body');
-    const selectedDest = document.getElementById('dest-select').value;
+    if (!tbody) return;
+    
+    const selectEl = document.getElementById('dest-select');
+    const selectedDest = selectEl ? selectEl.value : 'all';
+    
     tbody.innerHTML = '';
 
     let displayData = allData.filter(d => d.date === currentDate);
@@ -326,13 +400,17 @@ function renderTable() {
     }
 
     if (displayData.length === 0) {
-        document.getElementById('timetable').style.display = 'none';
-        document.getElementById('no-data').style.display = 'block';
+        const timetableEl = document.getElementById('timetable');
+        const noDataEl = document.getElementById('no-data');
+        if (timetableEl) timetableEl.style.display = 'none';
+        if (noDataEl) noDataEl.style.display = 'block';
         return;
     }
 
-    document.getElementById('timetable').style.display = 'table';
-    document.getElementById('no-data').style.display = 'none';
+    const timetableEl = document.getElementById('timetable');
+    const noDataEl = document.getElementById('no-data');
+    if (timetableEl) timetableEl.style.display = 'table';
+    if (noDataEl) noDataEl.style.display = 'none';
 
     displayData.forEach(bus => {
         const minStr = String(bus.m).padStart(2, '0');

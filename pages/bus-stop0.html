@@ -15,9 +15,13 @@
 <div class="container">
 
 
+    <header>
+        <div class="current-time">
+            <a id="bus-stop-link" href="https://maps.app.goo.gl/aqJjiw3sopQYFqAj9"><span id="current-bus-stop">----</span></a>&nbsp;
+            <span id="current-clock">--:--</span>
+        </div>
+    </header>
 
-    <div class="current-time"><span id="current-clock">--:--</span></div>
-    
     <div class="lcd-board" id="lcd-board" style="display: none;">
         <div class="lcd-header">
             <span>
@@ -35,7 +39,7 @@
     </div>
 
     <div class="filter-container" id="filter-ui" style="display: none;">
-        <label for="dest-select">行き先:</label>
+        <label for="dest-select">行先:</label>
         <select id="dest-select" onchange="renderTable()"></select>
     </div>
 
@@ -46,7 +50,7 @@
         <thead>
             <tr>
                 <th>系統</th>
-                <th>行き先</th>
+                <th>行先</th>
                 <th>時刻</th>
                 <th>始発</th>
             </tr>
