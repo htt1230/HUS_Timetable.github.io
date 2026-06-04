@@ -18,30 +18,53 @@ const busStopInfo = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 変更対象の h1 要素を取得
     const titleElement = document.getElementById('bus-stop-title');
     const infoElement = document.getElementById('bus-stop-info');
-    // デフォルトのテキストを記憶しておく
-    const defaultText = titleElement.textContent;
-
-    // すべてのバス停要素を取得
     const busStops = document.querySelectorAll('.bus-stop');
 
-    busStops.forEach(stop => {
-        // HTMLの data-name に書いた名前を取得
-        const busName = stop.getAttribute('data-name');
+    let activeStopId = null;
 
-        // マウスが乗ったとき：h1 をバス停名に書き換える
+    busStops.forEach(stop => {
+        const busName = stop.getAttribute('data-name');
+        const link = stop.querySelector('a');
+        
+        // 💡 ここがポイント！本来のURLをJSの中に一時退避させておく
+        const originalHref = link.href;
+
+        // 【Safari対策】スマホ画面の時だけ、aタグからURLを剥奪してSafariを騙す
+        if (window.innerWidth <= 600) {
+            link.removeAttribute('href'); 
+        }
+
+        // 【PC用】マウスが乗ったときの処理
         stop.addEventListener('mouseenter', () => {
-            if (busName) {
+            if (busName && window.innerWidth > 600) { 
                 titleElement.textContent = `${busName}を見る`;
                 infoElement.textContent = busStopInfo[stop.id].direction;
             }
         });
 
-        // マウスが離れたとき：元の「〇〇バス停を見る」に戻す
-        //stop.addEventListener('mouseleave', () => {
-        //    titleElement.textContent = defaultText;
-        //});
+        // 【スマホ用】確実な2段タップ制御
+        link.addEventListener('click', (e) => {
+            if (window.innerWidth <= 600) {
+                e.preventDefault(); 
+                
+                if (activeStopId !== stop.id) {
+                    // 👆【1回目のタップ】Safariのバグを回避して確実にここが動く！
+                    activeStopId = stop.id; 
+
+                    document.querySelectorAll('.bus-stop').forEach(s => s.classList.remove('active-mobile'));
+                    stop.classList.add('active-mobile');
+
+                    if (busName) {
+                        titleElement.textContent = `${busName}を見る`;
+                        infoElement.textContent = busStopInfo[stop.id].direction;
+                    }
+                } else {
+                    // 👆【2回目のタップ】退避させておいたURLを使って、JSの力で強制移動！
+                    window.location.href = originalHref; 
+                }
+            }
+        });
     });
 });
