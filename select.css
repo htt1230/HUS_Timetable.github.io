@@ -10,8 +10,8 @@
 
 body{
     margin-top: 100px;
-    background-color: #232323;
-    color: #fff;
+    background-color: #dddddd;
+    color: #111111;
     justify-content: center;
 }
 
@@ -31,7 +31,7 @@ header {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 5vw;
+    gap: 0.5vw;
 }
 
 
