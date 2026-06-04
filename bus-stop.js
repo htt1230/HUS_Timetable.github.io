@@ -39,7 +39,7 @@ const BUS_STOP_MASTERS = {
         sheet1: "前田6条10丁目",
         mapUrl: "https://maps.app.goo.gl/aqJjiw3sopQYFqAj9", // ★ここを追加
         config: [
-            { name: "麻生花畔方面", dests: ["地下鉄麻生駅","花畔"] },
+            { name: "麻生・花畔方面", dests: ["地下鉄麻生駅","花畔"] },
             { name: "手稲駅方面", dests: ["手稲駅北口"] },
             { name: "宮の沢方面", dests: ["宮の沢駅"] }
         ]
@@ -194,6 +194,7 @@ window.onload = async function() {
         
         updateDestDropdown();
         renderTable();
+        renderNextBuses();
 
     } catch (error) {
         // 👇👇 エラー時もスケルトンを隠してエラー文字を出す 👇👇
@@ -306,6 +307,9 @@ function updateDestDropdown() {
     const select = document.getElementById('dest-select');
     if (!select) return;
     
+    // ★ 1. 中身を書き換える前に、現在選ばれている行先を記憶しておく
+    const currentSelected = select.value;
+    
     const currentData = allData.filter(d => d.date === currentDate);
     const uniqueDests = [...new Set(currentData.map(d => d.dest))].filter(d => d !== '');
     
@@ -316,6 +320,15 @@ function updateDestDropdown() {
         option.innerText = dest;
         select.appendChild(option);
     });
+
+    // ★ 2. 記憶していた行先が新しい曜日にも存在すれば、それを再選択する
+    // （※もし「土曜には走っていない行先」だった場合は、自動で「すべて」に戻ります）
+    const hasOption = Array.from(select.options).some(opt => opt.value === currentSelected);
+    if (hasOption) {
+        select.value = currentSelected;
+    } else {
+        select.value = 'all';
+    }
 }
 
 function renderNextBuses() {
@@ -324,13 +337,8 @@ function renderNextBuses() {
     
     container.innerHTML = '';
 
-    const selectEl = document.getElementById('dest-select');
-    const selectedDest = selectEl ? selectEl.value : 'all';
-    
+    // ▼ 行先フィルター（select）の連携を解除し、常にその日の全便を対象にする
     let targetData = allData.filter(d => d.date === currentDate);
-    if (selectedDest !== 'all') {
-        targetData = targetData.filter(d => d.dest === selectedDest);
-    }
 
     const currentTotalMin = simHour * 60 + simMin;
 
@@ -459,7 +467,7 @@ function renderTable() {
         `;
         tbody.appendChild(tr);
     });
-    renderNextBuses();
+
 }
 
 function responseToJson(text) {

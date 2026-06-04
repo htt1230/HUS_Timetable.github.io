@@ -1,18 +1,18 @@
 @import url('https://fonts.googleapis.com/css2?family=LINE+Seed+JP&family=M+PLUS+1:wght@100..900&family=Noto+Sans+JP:wght@100..900&family=Zen+Kaku+Gothic+New&display=swap');
 
-
 .line-seed-jp-regular {
-  font-family: "LINE Seed JP", sans-serif;
-  font-weight: 300;
-  font-style: normal;
+    font-family: "LINE Seed JP", sans-serif;
+    font-weight: 300;
+    font-style: normal;
 }
 
-
-body{
-    margin-top: 100px;
+body {
+    margin-top: 20px;
     background-color: #dddddd;
     color: #111111;
-    justify-content: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 header {
@@ -25,6 +25,7 @@ header {
     align-items: center;
     padding: 0 20px;
     box-sizing: border-box;
+    position: absolute; /* ヘッダーを上部に固定 */
 }
 
 .container {
@@ -32,9 +33,9 @@ header {
     align-items: center;
     justify-content: center;
     gap: 0.5vw;
+    width: 100%;
+    max-width: 1200px;
 }
-
-
 
 .logo {
     width: 100%;
@@ -44,12 +45,11 @@ header {
     transition: transform 0.3s ease;
     transform: scale(2.05) translateY(60px);
     
-    /* ↓ここから追加（アニメーション時のガタつき防止）↓ */
+    /* アニメーション時のガタつき防止 */
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
     will-change: transform;
 }
-
 
 .disable-select {
     -webkit-user-select: none;
@@ -63,32 +63,28 @@ header {
     max-width: 30%;
     -webkit-mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 90%, transparent 100%);
     mask-image: linear-gradient(to bottom, black 0%, black 70%, transparent 90%, transparent 100%);
-    overflow: hidden; /* これがないと中の.logoがはみ出します */
+    overflow: hidden; 
+    cursor: pointer;
 }
+
+/* PC用のホバーアクション */
 .bus-stop:hover .logo {
     transform: scale(2.1) translateY(50px);
 }
 
 h1 {
     text-align: center;
-    font-family: "LINE Seed JP";
+    font-family: "LINE Seed JP", sans-serif;
     font-size: 60px;
     
-    /* ↓ここから追加（文字変更時のレイアウトズレ防止）↓ */
-    min-height: 90px; /* 文字が入っても高さが変わらないようにする */
-    margin-bottom: 20px; /* お好みで余白調整 */
+    /* 文字変更時のレイアウトズレ防止 */
+    min-height: 90px; 
+    margin-bottom: 20px; 
+    width: 100%;
 }
 
-
-
-
 /* -------------------------------------
    スマホ版専用のスタイル（画面幅600px以下）
-   ※既存のPC版レイアウトに影響を与えずに上書きします
-------------------------------------- */
-/* -------------------------------------
-   スマホ版専用のスタイル（画面幅600px以下）
-   ※既存のPC版レイアウトに影響を与えずに上書きします
 ------------------------------------- */
 @media (max-width: 600px) {
     /* 横並びを2x2のグリッド（折り返し）にする */
@@ -97,20 +93,20 @@ h1 {
         gap: 15px;
     }
 
-    /* 300px固定を解除し、画面幅の45%にして2列に収める */
+    /* 300px固定を解除し、画面幅の35%にして2列に収める */
     .bus-stop {
-        min-width: 45%;
-        max-width: 45%;
-        height: 220px; /* スマホ用に高さを半分に */
+        min-width: 42%;
+        max-width: 50%;
+        height: 240px; /* スマホ用に高さを半分に */
     }
 
     /* 画像サイズもスマホに合わせて縮小 */
     .logo {
-        height: 120px; 
+        height: 150px; 
         transform: scale(2.05) translateY(25px) !important; /* !importantで初期状態を強制 */
     }
 
-    /* ★ ここが超重要！スマホではPC用のホバー効果を打ち消してOSのバグを防ぐ */
+    /* ★ スマホではPC用のホバー効果を打ち消してOSのバグを防ぐ */
     .bus-stop:hover .logo {
         transform: scale(2.05) translateY(25px) !important;
     }
@@ -126,11 +122,12 @@ h1 {
         min-height: 40px;
         margin-bottom: 10px;
     }
+    
     #bus-stop-info {
         font-size: 18px;
     }
 
     body {
-        margin-top: 30px;
+        margin-top: 70px; /* ヘッダー分少し余裕を持たせる */
     }
 }
