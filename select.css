@@ -86,6 +86,10 @@ h1 {
    スマホ版専用のスタイル（画面幅600px以下）
    ※既存のPC版レイアウトに影響を与えずに上書きします
 ------------------------------------- */
+/* -------------------------------------
+   スマホ版専用のスタイル（画面幅600px以下）
+   ※既存のPC版レイアウトに影響を与えずに上書きします
+------------------------------------- */
 @media (max-width: 600px) {
     /* 横並びを2x2のグリッド（折り返し）にする */
     .container {
@@ -103,7 +107,17 @@ h1 {
     /* 画像サイズもスマホに合わせて縮小 */
     .logo {
         height: 120px; 
-        transform: scale(2.05) translateY(25px);
+        transform: scale(2.05) translateY(25px) !important; /* !importantで初期状態を強制 */
+    }
+
+    /* ★ ここが超重要！スマホではPC用のホバー効果を打ち消してOSのバグを防ぐ */
+    .bus-stop:hover .logo {
+        transform: scale(2.05) translateY(25px) !important;
+    }
+
+    /* スマホで「1回目タップ」された時に、JS経由でズーム演出するためのクラス */
+    .bus-stop.active-mobile .logo {
+        transform: scale(2.1) translateY(20px) !important;
     }
 
     /* 文字が巨大すぎてハミ出すのを防ぐ */
@@ -118,10 +132,5 @@ h1 {
 
     body {
         margin-top: 30px;
-    }
-
-    /* スマホで「1回目タップ」された時に、ホバーと同じズーム演出をするためのクラス */
-    .bus-stop.active-mobile .logo {
-        transform: scale(2.1) translateY(20px);
     }
 }
