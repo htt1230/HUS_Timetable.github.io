@@ -90,7 +90,7 @@
             border: 1px solid #ddd;
             padding: 10px 12px;
             width: 100%;
-            height: 70px;
+            height: 74px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
@@ -102,8 +102,7 @@
 
         /* 先頭（一番上の行）の枠線を黒く強調 */
         .bus-card.primary {
-        border-color: #404344;
-
+            border-color: #6d6566;
         }
 
         /* 2本目以降の行 */
@@ -127,7 +126,7 @@
             border-radius: 5px;
             color: #ffffff;
             padding: 2px 6px;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
         }
 
@@ -141,21 +140,40 @@
         /* 2行目 (行き先, 始発, カウントダウン) */
         .card-row-2 {
             display: flex;
-            align-items: flex-end;
+            align-items: center; /* 縦中央揃えに調整 */
             gap: 6px;
         }
         .c-dest {
-            font-size: 16px;
+            font-size: 20px;
             font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
         .c-first {
             color: #fff;
             font-size: 10px;
-            margin-left: 2px;
             background-color: #dd3333;
             padding: 1px 4px;
             border-radius: 4px;
+            line-height: 1.3;
         }
+        
+        /* 備考ポップアップボタンのスタイル */
+        .c-info-btn {
+            background: #dd3333;
+            border: none;
+            color: #ffffff;
+            cursor: pointer;
+            font-size: 14px;
+            height: 20px;
+            width: 20px;
+            padding: 0 2px;
+            line-height: 1;
+            outline: none;
+            border-radius: 10px;
+        }
+        
         .c-countdown {
             margin-left: auto;
             color: #666;
@@ -169,6 +187,48 @@
             border-top: 1px solid #ddd;
             padding-top: 4px;
             margin-top: 2px;
+        }
+
+        /* -------------------------------------
+           ポップアップ（モーダルダイアログ）
+        ------------------------------------- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #232323;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            max-width: 300px;
+            width: 80%;
+            text-align: center;
+        }
+        .modal-text {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            word-break: break-all;
+        }
+        .modal-close-btn {
+            background: #232323;
+            color: #ffffff;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
         }
 
         /* -------------------------------------
@@ -243,16 +303,47 @@
             color: #666;
         }
 
+        /* モバイル表示（スマホ画面）への最適化 */
         @media (max-width: 600px) {
             #lcd-entries { flex-direction: column; }
+
+            /* モバイル専用ボタンエリアの表示 */
+            #mobile-dir-tabs {
+                display: flex !important; /* スマホ時のみ flex にする */
+                gap: 5px;
+                margin-top: 5px;
+                margin-bottom: 5px;
+                flex: 1;
+            }
+            b-tab {
+                flex: 1;
+                text-align: center;
+                padding: 6px 8px;
+                background-color: #ffffff;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                font-size: 14px;
+                cursor: pointer;
+                font-weight: bold;
+                color: #888;
+            }
+            b-tab.active {
+                background-color: #232323;
+                color: #ffffff;
+                border-color: #232323;
+            }
+
+            /* JavaScript側で「hide」クラスがついた列（方面）を非表示にする */
+            .bus-column.hide {
+                display: none !important;
+            }
         }
 
         /* テーブルの列幅の指定 */
-        #timetable th:nth-child(1), #timetable td:nth-child(1) { width: 20%; } 
-        #timetable th:nth-child(2), #timetable td:nth-child(2) { width: 35%; } 
-        #timetable th:nth-child(3), #timetable td:nth-child(3) { width: 10%; } 
-        #timetable th:nth-child(4), #timetable td:nth-child(4) { width: 15%; } 
-        #timetable th:nth-child(5), #timetable td:nth-child(5) { width: 20%; } 
+        #timetable th:nth-child(1), #timetable td:nth-child(1) { width: 18%; } 
+        #timetable th:nth-child(2), #timetable td:nth-child(2) { width: 30%; } 
+        #timetable th:nth-child(3), #timetable td:nth-child(3) { width: 15%; } 
+        #timetable th:nth-child(4), #timetable td:nth-child(4) { width: 10%; } 
     </style>
 </head>
 <body>
@@ -269,7 +360,9 @@
     
     <div class="lcd-board" id="lcd-board" style="display: none;">
         <div class="lcd-header">
-            <span></span>
+            <span>
+                <span id="mobile-dir-tabs" style="display: none;"></span>
+            </span>
             <span id="current-clock">--:--</span>
         </div>
         <div id="lcd-entries"></div>
@@ -294,17 +387,24 @@
             <tr>
                 <th>系統</th>
                 <th>行き先</th>
-                <th></th>
                 <th>時刻</th>
-                <th>備考</th>
+                <th></th>
             </tr>
         </thead>
         <tbody id="table-body"></tbody>
     </table>
 </div>
 
+<div id="bikou-modal" class="modal-overlay" onclick="closeModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div id="modal-text" class="modal-text"></div>
+        <button class="modal-close-btn" onclick="closeModal()">閉じる</button>
+    </div>
+</div>
+
 <script>
-    const SHEET_URL = "https://docs.google.com/spreadsheets/d/1FjixtV7RSD3oJ_KskkLw-Pme-5t85rfGqofP2gIRAjg/gviz/tq?tqx=out:json&sheet=北海道科学大学";
+    const SHEET_URL_1 = "https://docs.google.com/spreadsheets/d/1FjixtV7RSD3oJ_KskkLw-Pme-5t85rfGqofP2gIRAjg/gviz/tq?tqx=out:json&sheet=北海道科学大学";
+    const SHEET_URL_2 = "https://docs.google.com/spreadsheets/d/1FjixtV7RSD3oJ_KskkLw-Pme-5t85rfGqofP2gIRAjg/gviz/tq?tqx=out:json&sheet=school";
     
     // 【一般化規定】上部のカード（lcd-board）に表示するグループと対象の行先
     const DIRECTION_CONFIG = [
@@ -318,7 +418,8 @@
         "宮79":     { bg: "#ff8c00", text: "#232323" },
         "循環手48": { bg: "#8eed8e", text: "#232323" },
         "手48":     { bg: "#8eed8e", text: "#232323" },
-        "手85":     { bg: "#4595e6", text: "#232323" }
+        "手85":     { bg: "#4595e6", text: "#232323" },
+        "スクール": { bg: "#ffff33", text: "#232323" }
     };
 
     const DEP_TIME_CLASSES = [
@@ -332,6 +433,11 @@
 
     function getRouteStyle(routeNumber) {
         const color = ROUTE_COLORS[routeNumber] || DEFAULT_ROUTE_COLOR;
+        if (routeNumber === "循環手48") {
+            return `background-color: ${color.bg}; color: ${color.text}; font-size: 13px; padding: 2px 4px;`;
+        }else if (routeNumber === "スクール") {
+            return `background-color: ${color.bg}; color: ${color.text}; font-size: 14px; padding: 2px 4px;`;
+        }
         return `background-color: ${color.bg}; color: ${color.text};`;
     }
 
@@ -347,6 +453,7 @@
     
     let simHour = 0;
     let simMin = 0;
+    let currentMobileDir = 0; // 初期値は0番目の方面
 
     window.onload = async function() {
         const now = new Date();
@@ -366,17 +473,32 @@
         });
 
         updateClockDisplay();
+        buildMobileTabs(); // スマホ用タブボタンの自動生成
 
         try {
-            const response = await fetch(SHEET_URL);
-            const text = await response.text();
-            
-            const start = text.indexOf('{');
-            const end = text.lastIndexOf('}');
-            const json = JSON.parse(text.substring(start, end + 1));
-            
-            allData = parseSheetData(json);
-            
+            // 2つのURLを同時に fetch しにいく
+            const [res1, res2] = await Promise.all([
+                fetch(SHEET_URL_1),
+                fetch(SHEET_URL_2)
+            ]);
+
+            // 同時にテキスト化
+            const [text1, text2] = await Promise.all([res1.text(), res2.text()]);
+
+            // 共通ヘルパー関数でJSON化
+            const json1 = responseToJson(text1);
+            const json2 = responseToJson(text2);
+
+            // それぞれをパースして配列にする
+            const data1 = parseSheetData(json1);
+            const data2 = parseSheetData(json2);
+
+            // 2つのデータを1つの配列に合算（マージ）
+            allData = [...data1, ...data2];
+
+            // 時刻順（hとm）でソートしておく
+            allData.sort((a, b) => (a.h * 60 + a.m) - (b.h * 60 + b.m));
+
             const today = now.getDay();
             if (today === 0) currentDate = '日曜/祝日';
             else if (today === 6) currentDate = '土曜';
@@ -397,6 +519,28 @@
             document.getElementById('loading').innerText = "通信エラー";
         }
     };
+
+    // モバイル用タブボタン生成関数
+    function buildMobileTabs() {
+        const mTabs = document.getElementById('mobile-dir-tabs');
+        mTabs.innerHTML = '';
+        DIRECTION_CONFIG.forEach((dir, idx) => {
+            mTabs.innerHTML += `
+                <b-tab class="${idx === currentMobileDir ? 'active' : ''}" onclick="changeMobileDir(${idx})">
+                    ${dir.name.replace('方面', '')}
+                </b-tab>
+            `;
+        });
+    }
+
+    // モバイル用タブ切り替え関数
+    function changeMobileDir(index) {
+        currentMobileDir = index;
+        document.querySelectorAll('#mobile-dir-tabs b-tab').forEach((tab, idx) => {
+            tab.classList.toggle('active', idx === index);
+        });
+        renderNextBuses();
+    }
 
     function updateClockDisplay() {
         const h = String(simHour).padStart(2, '0');
@@ -465,38 +609,34 @@
 
         const currentTotalMin = simHour * 60 + simMin;
 
-        // ★【ロジック変更】未来のバスのみ（現在時間以降）をいったん抽出
+        // 未来のバスのみ（現在時間以降）を抽出
         const upcoming = targetData.filter(bus => {
             const busTotalMin = bus.h * 60 + bus.m;
             return busTotalMin >= currentTotalMin;
         });
 
-        DIRECTION_CONFIG.forEach((dir) => {
+        DIRECTION_CONFIG.forEach((dir, index) => {
             // この方面のバスの中で「発車まで120分(2時間)以内」のものだけを最大3件抽出
             const matchBuses = upcoming.filter(bus => {
                 const busTotalMin = bus.h * 60 + bus.m;
                 const isMatchDest = dir.dests.includes(bus.dest);
-                const isWithin120Min = (busTotalMin - currentTotalMin) <= 120; // ★ここが発車120分前制限
+                const isWithin120Min = (busTotalMin - currentTotalMin) <= 120;
                 return isMatchDest && isWithin120Min;
             }).slice(0, 3);
 
+            // 選択されている方面かどうかに応じて、モバイル版用の非表示クラス（hide）の付け外しを判定
             let columnHtml = `
-                <div class="bus-column">
+                <div id="dir-col-${index}" class="bus-column ${index === currentMobileDir ? '' : 'hide'}">
                     <div style="text-align:center;">
                         <span class="c-dir-name">${dir.name}</span>
                     </div>
             `;
 
-            // 120分以内に対象のバスがない場合は、空欄にせず「運行情報なし」枠を表示
+            // 120分以内に対象のバスがない場合は「なし」枠を表示
             if (matchBuses.length === 0) {
                 columnHtml += `
-                    <div class="bus-card">
-                        <div class="card-row-1">
-                            <span class="c-time" style="font-size:16px; color:#aaa;">なし</span>
-                        </div>
-                        <div class="card-row-2">
-                            <span class="c-dest" style="font-size:14px; color:#aaa;">120分以内の発車なし</span>
-                        </div>
+                    <div class="bus-card" style="display: flex; justify-content: center; align-items: center; text-align: center;">
+                        <span style="font-size: 14px; color: #aaa; font-weight: bold;">直近のバスはありません</span>
                     </div>
                 `;
             } else {
@@ -506,7 +646,9 @@
                     
                     const rowClass = rowIndex === 0 ? 'primary' : 'sub-row';
                     const firstBadge = (bus.isFirst == 1) ? '<span class="c-first">始発</span>' : '';
-                    const bikouHtml = bus.bikou ? `<div class="card-row-3">${bus.bikou}</div>` : '';
+                    
+                    // 備考の有無判定と！マークボタン（シングルクォーテーションのエスケープ処理含む）
+                    const infoBtnHtml = bus.bikou ? `<button class="c-info-btn" onclick="openModal('${bus.bikou.replace(/'/g, "\\'")}')">！</button>` : '';
                     
                     const routeStyle = getRouteStyle(bus.number);
                     const depTimeColor = getDepartureTimeColor(diffMin);
@@ -515,14 +657,13 @@
                         <div class="bus-card ${rowClass}">
                             <div class="card-row-1">
                                 <span class="c-route" style="${routeStyle}">${bus.number}</span>
+                                ${firstBadge}
                                 <span class="c-time">${bus.h}:${minStr}</span>
                             </div>
                             <div class="card-row-2">
-                                <span class="c-dest">${bus.dest}</span>
-                                ${firstBadge}
+                                <span class="c-dest">${bus.dest}${infoBtnHtml}</span>
                                 <span class="c-countdown">あと<span style="font-size:18px; ${depTimeColor}">${diffMin}分</span></span>
                             </div>
-                            ${bikouHtml}
                         </div>
                     `;
                 });
@@ -531,6 +672,16 @@
             columnHtml += `</div>`;
             container.innerHTML += columnHtml;
         });
+    }
+
+    // モーダル制御ロジック
+    function openModal(text) {
+        document.getElementById('modal-text').innerText = text;
+        document.getElementById('bikou-modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('bikou-modal').style.display = 'none';
     }
 
     function renderTable() {
@@ -554,21 +705,36 @@
 
         displayData.forEach(bus => {
             const minStr = String(bus.m).padStart(2, '0');
-            const firstBadge = (bus.isFirst == 1) ? '<span class="c-first">始発</span>' : '';
+            
+            // 1. 始発バッジの生成（上部カードと高さを揃えるため、隙間用のマージンを左側に追加）
+            const firstBadge = (bus.isFirst == 1) ? '<span class="c-first" style="margin-left: 4px;">始発</span>' : '';
+            
+            // 2. 備考ボタンの生成（エスケープ処理付き。ボタンの左側に適度な隙間を付与）
+            const infoBtnHtml = bus.bikou ? `<button class="c-info-btn" style="margin-left: 4px;" onclick="openModal('${bus.bikou.replace(/'/g, "\\'")}')">❕</button>` : '';
             
             const routeStyle = getRouteStyle(bus.number);
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><span class="c-route" style="${routeStyle}">${bus.number}</span></td>
-                <td>${bus.dest}</td>
-                <td>${firstBadge}</td>
-                <td><span class="table-time">${bus.h}:${minStr}</span></td>
-                <td style="color:#666; font-size:13px;">${bus.bikou}</td>
+                <td style="text-align: center; vertical-align: middle;">
+                    <span style="display: inline-flex; align-items: center; justify-content: center; gap: 2px;">
+                        ${bus.dest}${infoBtnHtml}
+                    </span>
+                </td>
+               <td><span class="table-time">${bus.h}:${minStr}</span></td>
+                <td>${firstBadge}</td> 
             `;
             tbody.appendChild(tr);
         });
         renderNextBuses();
+    }
+
+    // スプレッドシートのレスポンスを共通でJSONにするヘルパー関数
+    function responseToJson(text) {
+        const start = text.indexOf('{');
+        const end = text.lastIndexOf('}');
+        return JSON.parse(text.substring(start, end + 1));
     }
 </script>
 
