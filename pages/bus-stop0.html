@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>バス発車標 - 北海道科学大学</title>
+    <title>バス発車標</title>
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic&family=Inter+Tight:wght@700&display=swap" rel="stylesheet">
     
     <style>
@@ -84,7 +84,7 @@
             gap: 6px;
         }
 
-        /* 個別のバスカード（各行のスタイル） */
+        /* 個別個別のバスカード（各行のスタイル） */
         .bus-card {
             background-color: #ffffff;
             border: 1px solid #ddd;
@@ -323,6 +323,7 @@
                 border: 1px solid #ddd;
                 border-radius: 4px;
                 font-size: 14px;
+                width: 60px;
                 cursor: pointer;
                 font-weight: bold;
                 color: #888;
@@ -403,15 +404,54 @@
 </div>
 
 <script>
-    const SHEET_URL_1 = "https://docs.google.com/spreadsheets/d/1FjixtV7RSD3oJ_KskkLw-Pme-5t85rfGqofP2gIRAjg/gviz/tq?tqx=out:json&sheet=北海道科学大学";
-    const SHEET_URL_2 = "https://docs.google.com/spreadsheets/d/1FjixtV7RSD3oJ_KskkLw-Pme-5t85rfGqofP2gIRAjg/gviz/tq?tqx=out:json&sheet=school";
-    
-    // 【一般化規定】上部のカード（lcd-board）に表示するグループと対象の行先
-    const DIRECTION_CONFIG = [
-        { name: "手稲駅方面", dests: ["手稲駅北口"] },
-        { name: "星置駅方面",   dests: ["星置駅"] },
-        { name: "宮の沢方面",   dests: ["宮の沢駅"] }
-    ];
+    // URLのパラメータ「?id=X」を解析する
+    const urlParams = new URLSearchParams(window.location.search);
+    const busStopId = urlParams.get('id') || '0'; // 指定がなければデフォルトで '0'
+
+    // 【マスター規定】ご提示いただいた最新の規定
+    const BUS_STOP_MASTERS = {
+        '0': {
+            title: "バス発車標 - 北海道科学大学",
+            sheet1: "北海道科学大学",
+            sheet2: "school",
+            config: [
+                { name: "手稲駅方面", dests: ["手稲駅北口"] },
+                { name: "星置駅方面",   dests: ["星置駅"] },
+                { name: "宮の沢方面",   dests: ["宮の沢駅"] }
+            ]
+        },
+        '1': {
+            title: "バス発車標 - 大学通西",
+            sheet1: "大学通西",
+            config: [
+                { name: "手稲駅方面", dests: ["手稲駅北口"] }
+            ]
+        },
+        '2': {
+            title: "バス発車標 - 前田中央通",
+            sheet1: "前田中央通",
+            config: [
+                { name: "北24条駅方面", dests: ["北２４条駅前"] },
+                { name: "手稲駅方面", dests: ["手稲駅北口"] },
+                { name: "前田森林方面", dests: ["前田森林公園"] }
+            ]
+        },
+        '3': {
+            title: "バス発車標 - 前田6条10丁目",
+            sheet1: "前田6条10丁目",
+            config: [
+                { name: "麻生花畔方面", dests: ["地下鉄麻生駅","花畔"] },
+                { name: "手稲駅方面", dests: ["手稲駅北口"] },
+                { name: "宮の沢方面", dests: ["宮の沢駅"] }
+            ]
+        }
+    };
+
+    // 現在のIDの設定を取得（未定義のIDなら0番の設定を適用）
+    const currentStop = BUS_STOP_MASTERS[busStopId] || BUS_STOP_MASTERS['0'];
+
+    // ページのタイトルタグをバス停名に動的書き換え
+    document.title = currentStop.title;
 
     // 系統ごとの背景色と文字色の辞書
     const ROUTE_COLORS = {
@@ -428,14 +468,14 @@
         { maxMin: 10, color: "#009900" }  
     ];
 
-    const DEFAULT_TIME_COLOR = "#8e8e93"; 
+    const DEFAULT_TIME_COLOR = "#8e8e93";
     const DEFAULT_ROUTE_COLOR = { bg: "#333333", text: "#ffffff" };
 
     function getRouteStyle(routeNumber) {
         const color = ROUTE_COLORS[routeNumber] || DEFAULT_ROUTE_COLOR;
         if (routeNumber === "循環手48") {
             return `background-color: ${color.bg}; color: ${color.text}; font-size: 13px; padding: 2px 4px;`;
-        }else if (routeNumber === "スクール") {
+        } else if (routeNumber === "スクール") {
             return `background-color: ${color.bg}; color: ${color.text}; font-size: 14px; padding: 2px 4px;`;
         }
         return `background-color: ${color.bg}; color: ${color.text};`;
@@ -455,6 +495,9 @@
     let simMin = 0;
     let currentMobileDir = 0; // 初期値は0番目の方面
 
+    // 選択されたバス停の方面規定を代入
+    const DIRECTION_CONFIG = currentStop.config;
+
     window.onload = async function() {
         const now = new Date();
         simHour = now.getHours();
@@ -469,34 +512,37 @@
             simMin = totalMinutes % 60;
             
             updateClockDisplay();
-            renderNextBuses(); 
+            renderNextBuses();
         });
 
         updateClockDisplay();
         buildMobileTabs(); // スマホ用タブボタンの自動生成
 
         try {
-            // 2つのURLを同時に fetch しにいく
-            const [res1, res2] = await Promise.all([
-                fetch(SHEET_URL_1),
-                fetch(SHEET_URL_2)
-            ]);
+            // リクエストURLの動的構築
+            const baseUrl = "https://docs.google.com/spreadsheets/d/1FjixtV7RSD3oJ_KskkLw-Pme-5t85rfGqofP2gIRAjg/gviz/tq?tqx=out:json";
+            
+            // ★【安全対策】sheet2が存在する場合のみ同時読み込み、無ければsheet1のみ処理する自動分岐
+            let fetchPromises = [fetch(`${baseUrl}&sheet=${encodeURIComponent(currentStop.sheet1)}`)];
+            if (currentStop.sheet2) {
+                fetchPromises.push(fetch(`${baseUrl}&sheet=${encodeURIComponent(currentStop.sheet2)}`));
+            }
 
-            // 同時にテキスト化
-            const [text1, text2] = await Promise.all([res1.text(), res2.text()]);
+            const responses = await Promise.all(fetchPromises);
+            const texts = await Promise.all(responses.map(res => res.text()));
 
-            // 共通ヘルパー関数でJSON化
-            const json1 = responseToJson(text1);
-            const json2 = responseToJson(text2);
+            // 1枚目のデータをパース
+            const json1 = responseToJson(texts[0]);
+            allData = parseSheetData(json1);
 
-            // それぞれをパースして配列にする
-            const data1 = parseSheetData(json1);
-            const data2 = parseSheetData(json2);
+            // 2枚目（sheet2）が存在していれば合算マージ
+            if (texts[1]) {
+                const json2 = responseToJson(texts[1]);
+                const data2 = parseSheetData(json2);
+                allData = [...allData, ...data2];
+            }
 
-            // 2つのデータを1つの配列に合算（マージ）
-            allData = [...data1, ...data2];
-
-            // 時刻順（hとm）でソートしておく
+            // 全データを時刻順（hとm）で一発ソート
             allData.sort((a, b) => (a.h * 60 + a.m) - (b.h * 60 + b.m));
 
             const today = now.getDay();
@@ -569,7 +615,7 @@
                 bikou: getVal(row.c[6])
             });
         });
-        return parsed;
+        return parsed; Greenwood
     }
 
     function changeDate(dateType) {
@@ -706,10 +752,10 @@
         displayData.forEach(bus => {
             const minStr = String(bus.m).padStart(2, '0');
             
-            // 1. 始発バッジの生成（上部カードと高さを揃えるため、隙間用のマージンを左側に追加）
+            // 1. 始発バッジの生成
             const firstBadge = (bus.isFirst == 1) ? '<span class="c-first" style="margin-left: 4px;">始発</span>' : '';
             
-            // 2. 備考ボタンの生成（エスケープ処理付き。ボタンの左側に適度な隙間を付与）
+            // 2. 備考ボタンの生成
             const infoBtnHtml = bus.bikou ? `<button class="c-info-btn" style="margin-left: 4px;" onclick="openModal('${bus.bikou.replace(/'/g, "\\'")}')">❕</button>` : '';
             
             const routeStyle = getRouteStyle(bus.number);
@@ -722,7 +768,7 @@
                         ${bus.dest}${infoBtnHtml}
                     </span>
                 </td>
-               <td><span class="table-time">${bus.h}:${minStr}</span></td>
+                <td><span class="table-time">${bus.h}:${minStr}</span></td>
                 <td>${firstBadge}</td> 
             `;
             tbody.appendChild(tr);
