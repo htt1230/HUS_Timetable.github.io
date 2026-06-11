@@ -2,14 +2,13 @@
 const urlParams = new URLSearchParams(window.location.search);
 const busStopId = urlParams.get('id') || '0'; // 指定がなければデフォルトで '0'
 
-// 【マスター規定】ご提示いただいた最新の規定
-// 【マスター規定】ご提示いただいた最新の規定に mapUrl を追加！
+// 【マスター規定】
 const BUS_STOP_MASTERS = {
     '0': {
         title: "バス発車標 - 北海道科学大学",
         sheet1: "北海道科学大学",
         sheet2: "school",
-        mapUrl: "https://maps.app.goo.gl/wS4J1GbedkcmbLpf8", // ★ここを追加（科学大バス停のURL）
+        mapUrl: "https://maps.app.goo.gl/wS4J1GbedkcmbLpf8", 
         config: [
             { name: "手稲駅方面", dests: ["手稲駅北口"] },
             { name: "星置駅方面",   dests: ["星置駅"] },
@@ -19,7 +18,7 @@ const BUS_STOP_MASTERS = {
     '1': {
         title: "バス発車標 - 大学通西",
         sheet1: "大学通西",
-        mapUrl: "https://maps.app.goo.gl/Kd5TTFDJTviUZeGUA", // ★ここを追加（大学通西のURL）
+        mapUrl: "https://maps.app.goo.gl/Kd5TTFDJTviUZeGUA",
         config: [
             { name: "手稲駅方面", dests: ["手稲駅北口"] }
         ]
@@ -27,7 +26,7 @@ const BUS_STOP_MASTERS = {
     '2': {
         title: "バス発車標 - 前田中央通",
         sheet1: "前田中央通",
-        mapUrl: "https://maps.app.goo.gl/RAWR9t7fngMfSj27A", // ★ここを追加
+        mapUrl: "https://maps.app.goo.gl/RAWR9t7fngMfSj27A",
         config: [
             { name: "北24条駅方面", dests: ["北２４条駅前"] },
             { name: "手稲駅方面", dests: ["手稲駅北口"] },
@@ -37,13 +36,21 @@ const BUS_STOP_MASTERS = {
     '3': {
         title: "バス発車標 - 前田6条10丁目",
         sheet1: "前田6条10丁目",
-        mapUrl: "https://maps.app.goo.gl/aqJjiw3sopQYFqAj9", // ★ここを追加
+        mapUrl: "https://maps.app.goo.gl/aqJjiw3sopQYFqAj9",
         config: [
             { name: "麻生・花畔方面", dests: ["地下鉄麻生駅","花畔"] },
             { name: "手稲駅方面", dests: ["手稲駅北口"] },
             { name: "宮の沢方面", dests: ["宮の沢駅"] }
         ]
     }
+};
+
+// ★ 到着予想を計算するための所要時間（分）定数
+const TRAVEL_TIMES = {
+    '0': { '循環手48': 16, '手48': 16, '手85': 9 },
+    '1': { '循環手48': 10, '手48': 10 },
+    '2': { '循環手48': 11, '手48': 11 },
+    '3': { '43': 5, '宮74': 5, '麻41': 6, '宮47': 7 }
 };
 
 // 現在のIDの設定を取得（未定義のIDなら0番の設定を適用）
@@ -94,6 +101,7 @@ function getDepartureTimeColor(depmin) {
 }
 
 let allData = [];
+let teineData = []; // ★ 手稲駅の元データを格納する変数
 let currentDate = '平日';
 
 let simHour = 0;
@@ -106,7 +114,7 @@ const DIRECTION_CONFIG = currentStop.config;
 window.onload = async function() {
     const now = new Date();
 
-    // 💡 画面要素にバス停名を挿入
+    // 画面要素にバス停名を挿入
     const busStopLabel = document.getElementById('current-bus-stop');
     if (busStopLabel) {
         busStopLabel.innerText = currentStop.sheet1;
@@ -114,19 +122,17 @@ window.onload = async function() {
 
     busStopLabel.innerHTML += `<img src="../img/maps_pin.png" alt="地図" style="width: 16px; height: auto; vertical-align: middle; margin-left: 4px;">`;
     
-    // 👇👇👇 ここを追加！ 👇👇👇
     // マスターデータの mapUrl を <a> タグのリンク先にセットする
     const busStopLink = document.getElementById('bus-stop-link');
     if (busStopLink && currentStop.mapUrl) {
         busStopLink.href = currentStop.mapUrl;
     }
-    // 👆👆👆 ここまで 👆👆👆
 
-    // ★HTML側にスライダー（#time-slider）があるかチェック
+    // HTML側にスライダー（#time-slider）があるかチェック
     const slider = document.getElementById('time-slider');
 
     if (slider) {
-        // 【スライダーが存在する場合：シミュレーターモード】
+        // 【シミュレーターモード】
         simHour = now.getHours();
         simMin = now.getMinutes();
         slider.value = simHour * 60 + simMin;
@@ -142,7 +148,7 @@ window.onload = async function() {
         
         updateClockDisplay();
     } else {
-        // 【スライダーがない場合：実時間連動モード】
+        // 【実時間連動モード】
         updateCurrentTime();
         
         // 30秒ごとに実時間を追いかけるタイマーを起動
@@ -162,6 +168,9 @@ window.onload = async function() {
         if (currentStop.sheet2) {
             fetchPromises.push(fetch(`${baseUrl}&sheet=${encodeURIComponent(currentStop.sheet2)}`));
         }
+        
+        // ★ 手稲駅_元時刻のシートも追加で読み込む
+        fetchPromises.push(fetch(`${baseUrl}&sheet=${encodeURIComponent('手稲駅_元時刻')}`));
 
         const responses = await Promise.all(fetchPromises);
         const texts = await Promise.all(responses.map(res => res.text()));
@@ -169,10 +178,16 @@ window.onload = async function() {
         const json1 = responseToJson(texts[0]);
         allData = parseSheetData(json1);
 
-        if (texts[1]) {
+        if (currentStop.sheet2) {
             const json2 = responseToJson(texts[1]);
             const data2 = parseSheetData(json2);
             allData = [...allData, ...data2];
+            
+            const teineJson = responseToJson(texts[2]);
+            teineData = parseTeineData(teineJson);
+        } else {
+            const teineJson = responseToJson(texts[1]);
+            teineData = parseTeineData(teineJson);
         }
 
         allData.sort((a, b) => (a.h * 60 + a.m) - (b.h * 60 + b.m));
@@ -182,10 +197,9 @@ window.onload = async function() {
         else if (today === 6) currentDate = '土曜';
         else currentDate = '平日';
         
-// ... (省略) ...
         document.getElementById('tab-' + currentDate).classList.add('active');
 
-        // 👇👇 ここを書き換え（スケルトンを隠して本物を出す） 👇👇
+        // スケルトンを隠して本物を出す
         const skLcd = document.getElementById('skeleton-lcd');
         if (skLcd) skLcd.style.display = 'none';
         
@@ -198,37 +212,33 @@ window.onload = async function() {
         document.getElementById('lcd-board').style.display = 'block';
         document.getElementById('filter-ui').style.display = 'flex';
         document.getElementById('timetable-wrap').style.display = 'block';
-        // 👆👆 ここまで 👆👆
         
         updateDestDropdown();
         renderTable();
         renderNextBuses();
 
     } catch (error) {
-        // 👇👇 エラー時もスケルトンを隠してエラー文字を出す 👇👇
+        // エラー時もスケルトンを隠してエラー文字を出す
         const skLcd = document.getElementById('skeleton-lcd');
         if (skLcd) skLcd.style.display = 'none';
         
-        const skTable = document.getElementById('skeleton-table');
-        if (skTable) skTable.style.display = 'none';
+        const skTableWrap = document.getElementById('skeleton-table-wrap');
+        if (skTableWrap) skTableWrap.style.display = 'none';
         
         const loadingEl = document.getElementById('loading');
         if (loadingEl) {
             loadingEl.style.display = 'block';
             loadingEl.innerText = "通信エラー";
         }
-        // 👆👆 ここまで 👆👆
     }
 };
 
-// 現在の実時間を取得して内部変数を書き換えるヘルパー関数
 // 現在の実時間を取得して内部変数を書き換えるヘルパー関数
 function updateCurrentTime() {
     const now = new Date();
     simHour = now.getHours();
     simMin = now.getMinutes();
     
-    // ★ h の「.padStart(2, '0')」を削除！
     const h = String(simHour);
     const m = String(simMin).padStart(2, '0');
     
@@ -238,9 +248,7 @@ function updateCurrentTime() {
     }
 }
 
-
 function updateClockDisplay() {
-    // ★ h の「.padStart(2, '0')」を削除！
     const h = String(simHour);
     const m = String(simMin).padStart(2, '0');
     const timeStr = `${h}:${m}`;
@@ -316,7 +324,6 @@ function updateDestDropdown() {
     const select = document.getElementById('dest-select');
     if (!select) return;
     
-    // ★ 1. 中身を書き換える前に、現在選ばれている行先を記憶しておく
     const currentSelected = select.value;
     
     const currentData = allData.filter(d => d.date === currentDate);
@@ -330,8 +337,6 @@ function updateDestDropdown() {
         select.appendChild(option);
     });
 
-    // ★ 2. 記憶していた行先が新しい曜日にも存在すれば、それを再選択する
-    // （※もし「土曜には走っていない行先」だった場合は、自動で「すべて」に戻ります）
     const hasOption = Array.from(select.options).some(opt => opt.value === currentSelected);
     if (hasOption) {
         select.value = currentSelected;
@@ -346,9 +351,7 @@ function renderNextBuses() {
     
     container.innerHTML = '';
 
-    // ▼ 行先フィルター（select）の連携を解除し、常にその日の全便を対象にする
     let targetData = allData.filter(d => d.date === currentDate);
-
     const currentTotalMin = simHour * 60 + simMin;
 
     const upcoming = targetData.filter(bus => {
@@ -379,26 +382,30 @@ function renderNextBuses() {
             `;
         } else {
             matchBuses.forEach((bus, rowIndex) => {
+                // 💡 安全のために bus のシリアライズ（文字列化）をループ内の最上部に移動
+                const busJson = encodeURIComponent(JSON.stringify(bus)).replace(/'/g, "%27");
+
                 const diffMin = (bus.h * 60 + bus.m) - currentTotalMin;
                 const minStr = String(bus.m).padStart(2, '0');
                 
                 const rowClass = rowIndex === 0 ? 'primary' : 'sub-row';
                 const firstBadge = (bus.isFirst == 1) ? '<span class="c-first">始発</span>' : '';
                 
-                const infoBtnHtml = bus.bikou ? `<button class="c-info-btn" onclick="openModal('${bus.bikou.replace(/'/g, "\\'")}')">！</button>` : '';
+                // ⭕️ 精巧に作られたデザインの「！」マークを組み込み
+                const infoIconHtml = bus.bikou ? `<span class="c-info-btn" style="display:inline-flex; align-items:center; justify-content:center; margin-left:4px; vertical-align:middle;">！</span>` : '';
                 
                 const routeStyle = getRouteStyle(bus.number);
                 const depTimeColor = getDepartureTimeColor(diffMin);
 
                 columnHtml += `
-                    <div class="bus-card ${rowClass}">
+                    <div class="bus-card ${rowClass}" onclick="openBusModal('${busJson}')" style="cursor: pointer;">
                         <div class="card-row-1">
                             <span class="c-route" style="${routeStyle}">${bus.number}</span>
                             ${firstBadge}
                             <span class="c-time">${bus.h}:${minStr}</span>
                         </div>
                         <div class="card-row-2">
-                            <span class="c-dest">${bus.dest}${infoBtnHtml}</span>
+                            <span class="c-dest">${bus.dest}${infoIconHtml}</span>
                             <span class="c-countdown">あと<span style="font-size:18px; ${depTimeColor}">${diffMin}分</span></span>
                         </div>
                     </div>
@@ -406,8 +413,6 @@ function renderNextBuses() {
             });
         }
 
-        // 👇👇👇 ここから追加 👇👇👇
-        // 北海道科学大学 (id='0') かつ、手稲駅方面 (index=0) の列の一番下に追加
         if (busStopId === '0' && index === 0) {
             columnHtml += `
                 <a href="?id=1" style="text-decoration: none;">
@@ -423,21 +428,6 @@ function renderNextBuses() {
     });
 }
 
-// モーダル制御ロジック
-function openModal(text) {
-    const modalTextEl = document.getElementById('modal-text');
-    const modalEl = document.getElementById('bikou-modal');
-    if (modalTextEl && modalEl) {
-        modalTextEl.innerHTML = text;
-        modalEl.style.display = 'flex';
-    }
-}
-
-// モーダル閉じるロジック
-function closeModal() {
-    const modalEl = document.getElementById('bikou-modal');
-    if (modalEl) modalEl.style.display = 'none';
-}
 function renderTable() {
     const tbody = document.getElementById('table-body');
     if (!tbody) return;
@@ -464,35 +454,38 @@ function renderTable() {
     if (timetableWrapEl) timetableWrapEl.style.display = 'block';
     if (noDataEl) noDataEl.style.display = 'none';
 
-    // 💡 【ここから追加】現在時刻（分換算）を取得
     const currentTotalMin = simHour * 60 + simMin;
-    let closestRowEl = null;      // 一番近い行のHTML要素を記憶する変数
-    let minDiff = Infinity;       // 時間差の最小値を記憶する変数
+    let closestRowEl = null;      
+    let minDiff = Infinity;       
 
     displayData.forEach(bus => {
+        const busJson = encodeURIComponent(JSON.stringify(bus)).replace(/'/g, "%27"); // 最上部で定義
+
         const minStr = String(bus.m).padStart(2, '0');
         const firstBadge = (bus.isFirst == 1) ? '<span class="c-first" style="margin-left: 4px;">始発</span>' : '';
-        const infoBtnHtml = bus.bikou ? `<button class="c-info-btn" style="margin-left: 4px;" onclick="openModal('${bus.bikou.replace(/'/g, "\\'")}')">❕</button>` : '';
+        
+        // ⭕️ 見た目を統一
+        const infoIconHtml = bus.bikou ? `<span class="c-info-btn" style="display:inline-flex; align-items:center; justify-content:center; margin-left:4px; vertical-align:middle;">！</span>` : '';
         const routeStyle = getRouteStyle(bus.number);
 
         const tr = document.createElement('tr');
         
-        // 💡 【ここから追加】この便の時刻（分換算）と現在時刻の差を計算
         const busTotalMin = bus.h * 60 + bus.m;
         const diff = busTotalMin - currentTotalMin;
 
-        // 条件：現在時刻「以降」で、かつこれまでで一番現在時刻に近い便を探す
-        // （例：8:11に対して 7:55(差-16) と 8:13(差+2) なら、8:13が選ばれます）
         if (diff >= 0 && diff < minDiff) {
             minDiff = diff;
-            closestRowEl = tr; // この行が「いま一番近い未来の便」
+            closestRowEl = tr; 
         }
+
+        tr.style.cursor = 'pointer';
+        tr.onclick = () => openBusModal(busJson);
 
         tr.innerHTML = `
             <td><span class="c-route" style="${routeStyle}">${bus.number}</span></td>
             <td style="text-align: center; vertical-align: middle;">
                 <span style="display: inline-flex; align-items: center; justify-content: center; gap: 2px;">
-                    ${bus.dest}${infoBtnHtml}
+                    ${bus.dest}${infoIconHtml}
                 </span>
             </td>
             <td><span class="table-time">${bus.h}:${minStr}</span></td>
@@ -501,19 +494,138 @@ function renderTable() {
         tbody.appendChild(tr);
     });
 
-// renderTable 関数の最後の部分です
     if (closestRowEl) {
-        // 1. 対象の行に目印のクラスをつける
         closestRowEl.classList.add('current-bus-row');
 
-        // 2. 枠内の一番上（start）にスクロールさせる
         setTimeout(() => {
             closestRowEl.scrollIntoView({
-                behavior: 'smooth', // スルッと滑らかに動かす
-                block: 'start'     // 🔥 ここを「start」にすれば一番上でピタッと止まります
+                behavior: 'smooth', 
+                block: 'start'     
             });
         }, 100);
     }
+}
+// ★ 新しいモーダル制御ロジック
+// ★ モーダル制御ロジック
+// ★ モーダル制御ロジック
+function openBusModal(encodedBus) {
+    const bus = JSON.parse(decodeURIComponent(encodedBus));
+    const minStr = String(bus.m).padStart(2, '0');
+    const routeStyle = getRouteStyle(bus.number);
+    
+    let etaHtml = '';
+    let trainTransferHtml = '';
+
+    // 手稲駅北口行きの場合のみ、到着予想と乗換案内を計算
+    if (bus.dest === "手稲駅北口") {
+        const baseTravelTime = (TRAVEL_TIMES[busStopId] && TRAVEL_TIMES[busStopId][bus.number]) ? TRAVEL_TIMES[busStopId][bus.number] : null;
+        
+        if (baseTravelTime) {
+            // 到着予想（分換算）
+            const estTotalMin = bus.h * 60 + bus.m + baseTravelTime;
+            const arrTime = `${Math.floor(estTotalMin / 60) % 24}:${String(estTotalMin % 60).padStart(2, '0')}`;
+            
+            etaHtml = `
+                <div style="text-align: left; font-size: 16px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 6px;">
+                    <span style="color: #666;">到着予想 <span style="font-size:12px;">(手稲駅)</span></span>
+                    <span style="float: right; font-weight: bold; font-size: 20px; color: #d9333f;">${arrTime}</span>
+                </div>
+            `;
+
+            // 👇👇 JR乗り換え案内の自動生成 👇👇
+            // 到着から「5分後」以降の電車を調べる（乗り換え猶予）
+            const transferLimitMin = estTotalMin + 5; 
+
+            // 小樽方面の行先リスト（これ以外はすべて「札幌方面」として扱う）
+            const OTARU_DESTS = ["小樽", "ほしみ", "倶知安", "余市", "然別", "小樽築港", "星置", "銭函"];
+
+            // 取得済みのJRデータから、時間に間に合うものを絞り込み
+            const upcomingTrains = teineData.filter(t => (t.h * 60 + t.m) >= transferLimitMin);
+            
+            // 方面別に分けて、直近の2本だけ取得
+            const sapporoTrains = upcomingTrains.filter(t => !OTARU_DESTS.includes(t.dest)).slice(0, 2);
+            const otaruTrains = upcomingTrains.filter(t => OTARU_DESTS.includes(t.dest)).slice(0, 2);
+
+            // 電車の種別ごとにバッジの色を変える関数
+            const getTrainColor = (type) => {
+                if (type.includes("エアポート")) return "#d9333f"; // 赤
+                if (type.includes("ニセコ") || type.includes("ライナー")) return "#ff8c00"; // オレンジ
+                if (type.includes("区間快速")) return "#009900"; // 緑
+                return "#666"; // 普通はグレー
+            };
+
+            // 列の中身（電車一覧）を生成する関数
+            const generateTrainHtml = (trains, emptyMsg) => {
+                if (trains.length === 0) return `<div style="font-size: 12px; color: #999; margin-top: 10px;">${emptyMsg}</div>`;
+                return trains.map(t => {
+                    const c = getTrainColor(t.route);
+                    const tTime = `${t.h}:${String(t.m).padStart(2, '0')}`;
+                    return `
+                        <div style="margin-bottom: 6px; line-height: 1.3;">
+                            <span style="color: ${c}; font-weight: bold; font-size: 10px; border: 1px solid ${c}; padding: 1px 3px; border-radius: 2px;">${t.route}</span><br>
+                            <span style="font-size: 12px;">${t.dest}</span> <span style="float: right; font-weight: bold; font-size: 14px;">${tTime}</span>
+                        </div>
+                    `;
+                }).join('');
+            };
+
+            trainTransferHtml = `
+                    <div style="font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #232323; text-align: center;">JR手稲駅 乗換案内</div>
+                    <div style="display: flex; justify-content: space-between; gap: 8px; text-align: left;">
+                        
+                        <div style="flex: 1; background: #f0f8ff; border: 1px solid #cce0ff; padding: 6px; border-radius: 4px;">
+                            <div style="font-size: 12px; font-weight: bold; border-bottom: 1px solid #a8cfff; margin-bottom: 6px; padding-bottom: 2px; color: #0056b3; text-align: center;">札幌方面</div>
+                            ${generateTrainHtml(sapporoTrains, "本日の運行終了")}
+                        </div>
+
+                        <div style="flex: 1; background: #fcfcfc; border: 1px solid #ddd; padding: 6px; border-radius: 4px;">
+                            <div style="font-size: 12px; font-weight: bold; border-bottom: 1px solid #ccc; margin-bottom: 6px; padding-bottom: 2px; color: #333; text-align: center;">小樽方面</div>
+                            ${generateTrainHtml(otaruTrains, "本日の運行終了")}
+                        </div>
+                        
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+const html = `
+        <div style="position: relative; text-align: center; margin-bottom: 15px;">
+            <span style="${routeStyle} display: inline-block; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 20px;">${bus.number}</span>
+            
+            <button onclick="closeModal()" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 22px; color: #888; cursor: pointer; padding: 0;">✕</button>
+        </div>
+        
+        <div style="text-align: left; font-size: 16px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 6px;">
+            <span style="color: #666;">行先</span>
+            <span style="float: right; font-weight: bold; font-size: 18px;">${bus.dest}</span>
+        </div>
+        
+        <div style="text-align: left; font-size: 16px; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 6px;">
+            <span style="color: #666;">発車時刻</span>
+            <span style="float: right; font-weight: bold; font-size: 20px;">${bus.h}:${minStr}</span>
+        </div>
+        
+        ${etaHtml}
+        
+        ${bus.bikou ? `
+        <div style="text-align: left; font-size: 14px; margin-top: 10px; background: #f9f9f9; padding: 10px; border-radius: 6px; color: #444; line-height: 1.4;">
+            <b style="color:#dd3333;">❕ 備考:</b><br>${bus.bikou}
+        </div>` : ''}
+        
+        ${trainTransferHtml}
+    `;
+    
+    const modalTextEl = document.getElementById('modal-text');
+    const modalEl = document.getElementById('bikou-modal');
+    if (modalTextEl && modalEl) {
+        modalTextEl.innerHTML = html;
+        modalEl.style.display = 'flex';
+    }
+}
+function closeModal() {
+    const modalEl = document.getElementById('bikou-modal');
+    if (modalEl) modalEl.style.display = 'none';
 }
 
 function responseToJson(text) {
@@ -522,3 +634,57 @@ function responseToJson(text) {
     return JSON.parse(text.substring(start, end + 1));
 }
 
+// ★ 手稲駅_元時刻シート専用のパーサー
+// ★ 手稲駅_元時刻シート専用のパーサー
+// ★ 手稲駅_元時刻シート専用のパーサー（J列の方面データ連動版）
+function parseTeineData(json) {
+    if (!json || !json.table || !json.table.rows) return [];
+    const rows = json.table.rows;
+    let parsed = [];
+    
+    rows.forEach(row => {
+        const getVal = (col) => (col && col.v !== null) ? col.v : '';
+        
+        // 列B: 表示時刻
+        const timeCol = row.c[1];
+        let timeStr = "";
+        if (timeCol) {
+            if (timeCol.f) timeStr = timeCol.f; 
+            else if (Array.isArray(timeCol.v)) timeStr = `${timeCol.v[0]}:${timeCol.v[1]}`; 
+            else timeStr = String(timeCol.v);
+        }
+        
+        // 列F (インデックス5): 種別
+        const route = String(getVal(row.c[5]));   
+        
+        // 列G (インデックス6): 行先
+        const dest = String(getVal(row.c[6]));    
+
+        // 💡 列J (インデックス9): 方面（札幌・岩見沢方面 / 小樽方面）
+        const directionStr = String(getVal(row.c[9]));
+
+        let h = null, m = null;
+        if (timeStr.includes(':')) {
+            const parts = timeStr.split(':');
+            h = parseInt(parts[0], 10);
+            m = parseInt(parts[1], 10);
+        }
+
+        if (h !== null && !isNaN(h) && m !== null && !isNaN(m) && route && dest) {
+            // 💡 J列の文字列に「小樽」が含まれているかで自動判定
+            const isOtaruDirection = directionStr.includes("小樽");
+
+            parsed.push({ 
+                h, 
+                m, 
+                route, 
+                dest, 
+                isOtaruDirection // 判定結果（true / false）をオブジェクトに持たせる
+            });
+        }
+    });
+    
+    // 時間順にソート
+    parsed.sort((a, b) => (a.h * 60 + a.m) - (b.h * 60 + b.m));
+    return parsed;
+}

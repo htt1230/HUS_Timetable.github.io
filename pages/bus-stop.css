@@ -172,7 +172,7 @@ header {
     border: none;
     color: #ffffff;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 12px;
     height: 20px;
     width: 20px;
     padding: 0 2px;
@@ -224,15 +224,13 @@ header {
     margin-bottom: 15px;
     word-break: break-all;
 }
+
 .modal-close-btn {
-    background: #232323;
-    color: #ffffff;
-    border: none;
-    padding: 6px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
+    background-color: #ffffff00;
+    color: #232323;
+    position: absolute;
+    top: 10px;
+    right: 10px;
 }
 
 /* -------------------------------------
@@ -443,6 +441,17 @@ table th:nth-child(4), table td:nth-child(4) { width: 15%; }
     top: 0;
     background-color: #fff; /* 背景色を設定して透けないようにする */
     z-index: 1;
+}
+
+/* 現在時刻に一番近い行の背景色 */
+tr.current-bus-row {
+    background-color: #fff9db !important; /* 目立たせる背景色（薄い黄色） */
+    font-weight: bold;                    /* 文字を太字にする場合 */
+    scroll-margin-top: 60px; /* 🔥 数字を大きくするほど、スクロール位置が下がります */
+}
+
+tr.current-bus-row td {
+    scroll-margin-top: 50px; /* 🔥 ここで一番上からの隙間（1〜2行分）を調整 */
 }
 
 @media (max-width: 600px) {
