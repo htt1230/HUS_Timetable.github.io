@@ -3,6 +3,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const busStopId = urlParams.get('id') || '0'; // 指定がなければデフォルトで '0'
 
 // 【マスター規定】
+// 【マスター規定】系統（keitou）の条件指定バージョン
 const BUS_STOP_MASTERS = {
     '0': {
         title: "バス発車標 - 北海道科学大学",
@@ -10,7 +11,7 @@ const BUS_STOP_MASTERS = {
         sheet2: "school",
         mapUrl: "https://maps.app.goo.gl/wS4J1GbedkcmbLpf8", 
         config: [
-            { name: "手稲駅方面", dests: ["手稲駅北口"] },
+            { name: "手稲駅方面", dests: ["手稲駅北口"], keitou: ["手48", "循環手48", "手85"] },
             { name: "星置駅方面",   dests: ["星置駅"] },
             { name: "宮の沢方面",   dests: ["宮の沢駅"] }
         ]
@@ -20,7 +21,7 @@ const BUS_STOP_MASTERS = {
         sheet1: "大学通西",
         mapUrl: "https://maps.app.goo.gl/Kd5TTFDJTviUZeGUA",
         config: [
-            { name: "手稲駅方面", dests: ["手稲駅北口"] }
+            { name: "手稲駅方面", dests: ["手稲駅北口"], keitou: ["手48", "循環手48"] }
         ]
     },
     '2': {
@@ -29,7 +30,7 @@ const BUS_STOP_MASTERS = {
         mapUrl: "https://maps.app.goo.gl/RAWR9t7fngMfSj27A",
         config: [
             { name: "北24条駅方面", dests: ["北２４条駅前"] },
-            { name: "手稲駅方面", dests: ["手稲駅北口"] },
+            { name: "手稲駅方面", dests: ["手稲駅北口"], keitou: ["手48", "循環手48"] },
             { name: "前田森林方面", dests: ["前田森林公園"] }
         ]
     },
@@ -39,13 +40,13 @@ const BUS_STOP_MASTERS = {
         mapUrl: "https://maps.app.goo.gl/aqJjiw3sopQYFqAj9",
         config: [
             { name: "麻生・花畔方面", dests: ["地下鉄麻生駅","花畔"] },
-            { name: "手稲駅方面", dests: ["手稲駅北口"] },
-            { name: "宮の沢方面", dests: ["宮の沢駅"] }
+            { name: "手稲駅方面", dests: ["手稲駅北口"], keitou: ["43", "宮47", "麻41", "宮74"] },
+            { name: "宮の沢方面",   dests: ["宮の沢駅"],   keitou: ["宮47"] } // 🔥 ここに「宮47」だけを指定することで宮74を排除！
         ]
     }
 };
 
-// ★ 到着予想を計算するための所要時間（分）定数
+// 到着予想を計算するための所要時間（分）定数
 const TRAVEL_TIMES = {
     '0': { '循環手48': 16, '手48': 16, '手85': 9 },
     '1': { '循環手48': 10, '手48': 10 },
@@ -53,20 +54,17 @@ const TRAVEL_TIMES = {
     '3': { '43': 5, '宮74': 5, '麻41': 6, '宮47': 7 }
 };
 
-// 現在のIDの設定を取得（未定義のIDなら0番の設定を適用）
+// 現在の設定を取得
 const currentStop = BUS_STOP_MASTERS[busStopId] || BUS_STOP_MASTERS['0'];
-
-// ページのタイトルタグをバス停名に動的書き換え
 document.title = currentStop.title;
 
-// 系統ごとの背景色と文字色の辞書
+// 系統ごとの背景色と文字色
 const ROUTE_COLORS = {
     "宮79":     { bg: "#ff8c00", text: "#232323" },
     "循環手48": { bg: "#8eed8e", text: "#232323" },
     "手48":     { bg: "#8eed8e", text: "#232323" },
     "手85":     { bg: "#99c4f0ff", text: "#232323" },
     "スクール": { bg: "#ffff33", text: "#232323" },
-
     "麻41"  : { bg: "#118f01ff", text: "#ffffff" },
     "43"    : { bg: "#d9333f", text: "#ffffff" },
     "北72"  : { bg: "#d9333f", text: "#ffffff" },
@@ -101,67 +99,52 @@ function getDepartureTimeColor(depmin) {
 }
 
 let allData = [];
-let teineData = []; // ★ 手稲駅の元データを格納する変数
+let teineData = []; // 手稲駅の現時刻データを格納する配列
 let currentDate = '平日';
 
 let simHour = 0;
 let simMin = 0;
-let currentMobileDir = 0; // 初期値は0番目の方面
+let currentMobileDir = 0;
 
-// 選択されたバス停の方面規定を代入
 const DIRECTION_CONFIG = currentStop.config;
 
 window.onload = async function() {
     const now = new Date();
 
-    // 画面要素にバス停名を挿入
     const busStopLabel = document.getElementById('current-bus-stop');
     if (busStopLabel) {
         busStopLabel.innerText = currentStop.sheet1;
     }
-
     busStopLabel.innerHTML += `<img src="../img/maps_pin.png" alt="地図" style="width: 16px; height: auto; vertical-align: middle; margin-left: 4px;">`;
     
-    // マスターデータの mapUrl を <a> タグのリンク先にセットする
     const busStopLink = document.getElementById('bus-stop-link');
     if (busStopLink && currentStop.mapUrl) {
         busStopLink.href = currentStop.mapUrl;
     }
 
-    // HTML側にスライダー（#time-slider）があるかチェック
     const slider = document.getElementById('time-slider');
-
     if (slider) {
-        // 【シミュレーターモード】
         simHour = now.getHours();
         simMin = now.getMinutes();
         slider.value = simHour * 60 + simMin;
-
         slider.addEventListener('input', function() {
             const totalMinutes = parseInt(this.value, 10);
             simHour = Math.floor(totalMinutes / 60);
             simMin = totalMinutes % 60;
-            
             updateClockDisplay();
             renderNextBuses();
         });
-        
         updateClockDisplay();
     } else {
-        // 【実時間連動モード】
         updateCurrentTime();
-        
-        // 30秒ごとに実時間を追いかけるタイマーを起動
         setInterval(function() {
             updateCurrentTime();
             renderNextBuses();
         }, 30000);
     }
 
-    buildMobileTabs(); // スマホ用タブボタンの自動生成
-
-    try {
-        // リクエストURLの動的構築
+    buildMobileTabs();
+try {
         const baseUrl = "https://docs.google.com/spreadsheets/d/1FjixtV7RSD3oJ_KskkLw-Pme-5t85rfGqofP2gIRAjg/gviz/tq?tqx=out:json";
         
         let fetchPromises = [fetch(`${baseUrl}&sheet=${encodeURIComponent(currentStop.sheet1)}`)];
@@ -169,8 +152,9 @@ window.onload = async function() {
             fetchPromises.push(fetch(`${baseUrl}&sheet=${encodeURIComponent(currentStop.sheet2)}`));
         }
         
-        // ★ 手稲駅_元時刻のシートも追加で読み込む
+        // 💡 【修正】「元時刻」と「現時刻」の2つのシートを両方とも配列に追加して同時に叩く
         fetchPromises.push(fetch(`${baseUrl}&sheet=${encodeURIComponent('手稲駅_元時刻')}`));
+        fetchPromises.push(fetch(`${baseUrl}&sheet=${encodeURIComponent('手稲駅_現時刻')}`));
 
         const responses = await Promise.all(fetchPromises);
         const texts = await Promise.all(responses.map(res => res.text()));
@@ -178,17 +162,22 @@ window.onload = async function() {
         const json1 = responseToJson(texts[0]);
         allData = parseSheetData(json1);
 
+        // 💡 【修正】sheet2（スクール等）の有無によってインデックスをずらして正確にパース
+        let teineMotoJson, teineGenJson;
         if (currentStop.sheet2) {
             const json2 = responseToJson(texts[1]);
             const data2 = parseSheetData(json2);
             allData = [...allData, ...data2];
             
-            const teineJson = responseToJson(texts[2]);
-            teineData = parseTeineData(teineJson);
+            teineMotoJson = responseToJson(texts[2]);
+            teineGenJson = responseToJson(texts[3]);
         } else {
-            const teineJson = responseToJson(texts[1]);
-            teineData = parseTeineData(teineJson);
+            teineMotoJson = responseToJson(texts[1]);
+            teineGenJson = responseToJson(texts[2]);
         }
+
+        // 💡 【修正】元時刻と現時刻のデータを合体させる関数へ2つのJSONを渡す
+        teineData = parseTeineAndLiveData(teineMotoJson, teineGenJson);
 
         allData.sort((a, b) => (a.h * 60 + a.m) - (b.h * 60 + b.m));
 
@@ -199,7 +188,6 @@ window.onload = async function() {
         
         document.getElementById('tab-' + currentDate).classList.add('active');
 
-        // スケルトンを隠して本物を出す
         const skLcd = document.getElementById('skeleton-lcd');
         if (skLcd) skLcd.style.display = 'none';
         
@@ -218,13 +206,10 @@ window.onload = async function() {
         renderNextBuses();
 
     } catch (error) {
-        // エラー時もスケルトンを隠してエラー文字を出す
         const skLcd = document.getElementById('skeleton-lcd');
         if (skLcd) skLcd.style.display = 'none';
-        
         const skTableWrap = document.getElementById('skeleton-table-wrap');
         if (skTableWrap) skTableWrap.style.display = 'none';
-        
         const loadingEl = document.getElementById('loading');
         if (loadingEl) {
             loadingEl.style.display = 'block';
@@ -233,42 +218,29 @@ window.onload = async function() {
     }
 };
 
-// 現在の実時間を取得して内部変数を書き換えるヘルパー関数
 function updateCurrentTime() {
     const now = new Date();
     simHour = now.getHours();
     simMin = now.getMinutes();
-    
     const h = String(simHour);
     const m = String(simMin).padStart(2, '0');
-    
     const clockEl = document.getElementById('current-clock');
-    if (clockEl) {
-        clockEl.innerText = `${h}:${m}`;
-    }
+    if (clockEl) clockEl.innerText = `${h}:${m}`;
 }
 
 function updateClockDisplay() {
     const h = String(simHour);
     const m = String(simMin).padStart(2, '0');
     const timeStr = `${h}:${m}`;
-    
     const clockEl = document.getElementById('current-clock');
-    if (clockEl) {
-        clockEl.innerText = timeStr;
-    }
-    
+    if (clockEl) clockEl.innerText = timeStr;
     const sliderDisplay = document.getElementById('slider-time-display');
-    if (sliderDisplay) {
-        sliderDisplay.innerText = timeStr;
-    }
+    if (sliderDisplay) sliderDisplay.innerText = timeStr;
 }
 
-// モバイル用タブボタン生成関数
 function buildMobileTabs() {
     const mTabs = document.getElementById('mobile-dir-tabs');
     if (!mTabs) return;
-    
     mTabs.innerHTML = '';
     DIRECTION_CONFIG.forEach((dir, idx) => {
         mTabs.innerHTML += `
@@ -279,7 +251,6 @@ function buildMobileTabs() {
     });
 }
 
-// モバイル用タブ切り替え関数
 function changeMobileDir(index) {
     currentMobileDir = index;
     document.querySelectorAll('#mobile-dir-tabs b-tab').forEach((tab, idx) => {
@@ -323,9 +294,7 @@ function changeDate(dateType) {
 function updateDestDropdown() {
     const select = document.getElementById('dest-select');
     if (!select) return;
-    
     const currentSelected = select.value;
-    
     const currentData = allData.filter(d => d.date === currentDate);
     const uniqueDests = [...new Set(currentData.map(d => d.dest))].filter(d => d !== '');
     
@@ -338,17 +307,13 @@ function updateDestDropdown() {
     });
 
     const hasOption = Array.from(select.options).some(opt => opt.value === currentSelected);
-    if (hasOption) {
-        select.value = currentSelected;
-    } else {
-        select.value = 'all';
-    }
+    if (hasOption) select.value = currentSelected;
+    else select.value = 'all';
 }
 
 function renderNextBuses() {
     const container = document.getElementById('lcd-entries');
     if (!container) return;
-    
     container.innerHTML = '';
 
     let targetData = allData.filter(d => d.date === currentDate);
@@ -382,16 +347,12 @@ function renderNextBuses() {
             `;
         } else {
             matchBuses.forEach((bus, rowIndex) => {
-                // 💡 安全のために bus のシリアライズ（文字列化）をループ内の最上部に移動
                 const busJson = encodeURIComponent(JSON.stringify(bus)).replace(/'/g, "%27");
-
                 const diffMin = (bus.h * 60 + bus.m) - currentTotalMin;
                 const minStr = String(bus.m).padStart(2, '0');
                 
                 const rowClass = rowIndex === 0 ? 'primary' : 'sub-row';
                 const firstBadge = (bus.isFirst == 1) ? '<span class="c-first">始発</span>' : '';
-                
-                // ⭕️ 精巧に作られたデザインの「！」マークを組み込み
                 const infoIconHtml = bus.bikou ? `<span class="c-info-btn" style="display:inline-flex; align-items:center; justify-content:center; margin-left:4px; vertical-align:middle;">！</span>` : '';
                 
                 const routeStyle = getRouteStyle(bus.number);
@@ -431,7 +392,6 @@ function renderNextBuses() {
 function renderTable() {
     const tbody = document.getElementById('table-body');
     if (!tbody) return;
-    
     const selectEl = document.getElementById('dest-select');
     const selectedDest = selectEl ? selectEl.value : 'all';
     
@@ -459,17 +419,13 @@ function renderTable() {
     let minDiff = Infinity;       
 
     displayData.forEach(bus => {
-        const busJson = encodeURIComponent(JSON.stringify(bus)).replace(/'/g, "%27"); // 最上部で定義
-
+        const busJson = encodeURIComponent(JSON.stringify(bus)).replace(/'/g, "%27");
         const minStr = String(bus.m).padStart(2, '0');
         const firstBadge = (bus.isFirst == 1) ? '<span class="c-first" style="margin-left: 4px;">始発</span>' : '';
-        
-        // ⭕️ 見た目を統一
         const infoIconHtml = bus.bikou ? `<span class="c-info-btn" style="display:inline-flex; align-items:center; justify-content:center; margin-left:4px; vertical-align:middle;">！</span>` : '';
         const routeStyle = getRouteStyle(bus.number);
 
         const tr = document.createElement('tr');
-        
         const busTotalMin = bus.h * 60 + bus.m;
         const diff = busTotalMin - currentTotalMin;
 
@@ -496,18 +452,14 @@ function renderTable() {
 
     if (closestRowEl) {
         closestRowEl.classList.add('current-bus-row');
-
         setTimeout(() => {
-            closestRowEl.scrollIntoView({
-                behavior: 'smooth', 
-                block: 'start'     
-            });
+            closestRowEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
     }
 }
-// ★ 新しいモーダル制御ロジック
+
 // ★ モーダル制御ロジック
-// ★ モーダル制御ロジック
+// ★ モーダル制御ロジック（マスターの keitou 配列連動バージョン）
 function openBusModal(encodedBus) {
     const bus = JSON.parse(decodeURIComponent(encodedBus));
     const minStr = String(bus.m).padStart(2, '0');
@@ -516,12 +468,19 @@ function openBusModal(encodedBus) {
     let etaHtml = '';
     let trainTransferHtml = '';
 
-    // 手稲駅北口行きの場合のみ、到着予想と乗換案内を計算
-    if (bus.dest === "手稲駅北口") {
+    // 💡 現在選択されているバス停の設定から、このバスの行先が属する方面の設定を取得
+    const targetConfig = DIRECTION_CONFIG.find(dir => dir.dests.includes(bus.dest));
+    
+    // 💡 設定が存在し、かつ keitou 配列の中にタップしたバスの系統番号（bus.number）が含まれているか判定
+    const isJrTarget = targetConfig && 
+                       Array.isArray(targetConfig.keitou) && 
+                       targetConfig.keitou.includes(bus.number);
+
+    // 条件に完全一致したバス（手稲駅北口行き、または手稲駅を経由する宮47など）のみJR案内を生成
+    if (isJrTarget) {
         const baseTravelTime = (TRAVEL_TIMES[busStopId] && TRAVEL_TIMES[busStopId][bus.number]) ? TRAVEL_TIMES[busStopId][bus.number] : null;
         
         if (baseTravelTime) {
-            // 到着予想（分換算）
             const estTotalMin = bus.h * 60 + bus.m + baseTravelTime;
             const arrTime = `${Math.floor(estTotalMin / 60) % 24}:${String(estTotalMin % 60).padStart(2, '0')}`;
             
@@ -532,67 +491,104 @@ function openBusModal(encodedBus) {
                 </div>
             `;
 
-            // 👇👇 JR乗り換え案内の自動生成 👇👇
-            // 到着から「5分後」以降の電車を調べる（乗り換え猶予）
             const transferLimitMin = estTotalMin + 5; 
-
-            // 小樽方面の行先リスト（これ以外はすべて「札幌方面」として扱う）
-            const OTARU_DESTS = ["小樽", "ほしみ", "倶知安", "余市", "然別", "小樽築港", "星置", "銭函"];
-
-            // 取得済みのJRデータから、時間に間に合うものを絞り込み
             const upcomingTrains = teineData.filter(t => (t.h * 60 + t.m) >= transferLimitMin);
             
-            // 方面別に分けて、直近の2本だけ取得
-            const sapporoTrains = upcomingTrains.filter(t => !OTARU_DESTS.includes(t.dest)).slice(0, 2);
-            const otaruTrains = upcomingTrains.filter(t => OTARU_DESTS.includes(t.dest)).slice(0, 2);
+            const sapporoTrains = upcomingTrains.filter(t => !t.isOtaruDirection).slice(0, 4);
+            const otaruTrains = upcomingTrains.filter(t => t.isOtaruDirection).slice(0, 4);
 
-            // 電車の種別ごとにバッジの色を変える関数
             const getTrainColor = (type) => {
-                if (type.includes("エアポート")) return "#d9333f"; // 赤
-                if (type.includes("ニセコ") || type.includes("ライナー")) return "#ff8c00"; // オレンジ
-                if (type.includes("区間快速")) return "#009900"; // 緑
-                return "#666"; // 普通はグレー
+                if (type.includes("特別快速")) return "#d9333f"; 
+                if (type.includes("快速") || type.includes("ライナー")) return "#ff8c00"; 
+                return "#232323"; 
             };
 
-            // 列の中身（電車一覧）を生成する関数
-            const generateTrainHtml = (trains, emptyMsg) => {
-                if (trains.length === 0) return `<div style="font-size: 12px; color: #999; margin-top: 10px;">${emptyMsg}</div>`;
-                return trains.map(t => {
+const generateTrainHtml = (trains, emptyMsg) => {
+                if (trains.length === 0) return `<div style="font-size: 12px; color: #999; margin: 15px 0; text-align: center;">${emptyMsg}</div>`;
+                
+                // 💡 見出しテーブル：border: none; と border-collapse: collapse; を追加
+                const headerHtml = `
+                    <table style="width: 100%; margin-bottom: 4px; table-layout: fixed; border-collapse: collapse; border: none; border-bottom: 1px solid #ddd;">
+                        <tr>
+                            <td style="padding: 2px 0; font-size: 11px; color: #666; text-align: center; width: 20%; border: none;">種別</td>
+                            <td style="padding: 2px 0 2px 4px; font-size: 11px; color: #666; text-align: left; border: none;">行先</td>
+                            <td style="padding: 2px 0; font-size: 11px; color: #666; text-align: right; width: 20%; border: none;">定刻</td>
+                            <td style="padding: 2px 0 2px 6px; font-size: 11px; color: #666; text-align: right; width: 20%; border: none;">運行状況</td>
+                        </tr>
+                    </table>
+                `;
+
+                return headerHtml + trains.map(t => {
                     const c = getTrainColor(t.route);
                     const tTime = `${t.h}:${String(t.m).padStart(2, '0')}`;
-                    return `
-                        <div style="margin-bottom: 6px; line-height: 1.3;">
-                            <span style="color: ${c}; font-weight: bold; font-size: 10px; border: 1px solid ${c}; padding: 1px 3px; border-radius: 2px;">${t.route}</span><br>
-                            <span style="font-size: 12px;">${t.dest}</span> <span style="float: right; font-weight: bold; font-size: 14px;">${tTime}</span>
-                        </div>
+
+                    let displayRoute = t.route;
+                    if (t.route.includes("ライナー") || t.route.includes("ﾗｲﾅｰ")) {
+                        displayRoute = "ﾗｲﾅｰ";
+                    }
+
+                    let timeStyle = "font-weight: bold; font-size: 18px; color: #232323;";
+                    let delayHtml = `<span style="font-size: 16px; color: #186318ff; font-weight: bold;">定刻</span>`;
+
+                    if (t.delay > 0) {
+                        timeStyle = "font-size: 16px; color: #888; text-decoration: line-through;";
+                        const delayedTotalMin = t.h * 60 + t.m + t.delay;
+                        const delayedH = Math.floor(delayedTotalMin / 60) % 24;
+                        const delayedM = String(delayedTotalMin % 60).padStart(2, '0');
+                        
+                        delayHtml = `
+                            <span style="font-weight: bold; font-size: 18px; color: #d9333f; margin-right: 4px;">${delayedH}:${delayedM}</span>
+                            <span style="font-size: 11px; color: #fff; background: #d9333f; padding: 1px 4px; border-radius: 3px; vertical-align: middle; white-space: nowrap;">+${t.delay}分</span>
+                        `;
+                    }
+
+                    // 💡 データテーブル：ここも同じく border-collapse: collapse; border: none; を追加
+                    // 各 <td> にもデフォルトのボーダーを消すために border: none; を付与
+                    return `    
+                        <table style="width: 100%; margin-bottom: 6px; table-layout: fixed; border-collapse: collapse; border: none;">
+                            <tr>
+                                <td style="padding: 4px 0; vertical-align: middle; width: 20%; border: none;">
+                                    <span style="color: ${c}; background: #ffffff; font-size: 15px; padding: 1px 4px; border: 1px solid ${c}; border-radius: 3px; display: inline-block; white-space: nowrap;">${displayRoute}</span>
+                                </td>
+                                <td style="padding: 4px 0 4px 4px; vertical-align: middle; text-align: left; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; border: none;">
+                                    <span style="color: #232323; font-size: 16px; font-weight: bold;">${t.dest}行</span>
+                                </td>
+                                <td style="padding: 4px 0 4px 4px; vertical-align: middle; text-align: right; width: 20%; border: none;">
+                                    <span style="${timeStyle}">${tTime}</span>
+                                </td>
+                                <td style="padding: 4px 0 4px 6px; vertical-align: middle; text-align: right; width: 20%; border: none;">
+                                    ${delayHtml}
+                                </td>
+                            </tr>
+                        </table>
                     `;
                 }).join('');
             };
 
             trainTransferHtml = `
-                    <div style="font-size: 14px; font-weight: bold; margin-bottom: 8px; color: #232323; text-align: center;">JR手稲駅 乗換案内</div>
-                    <div style="display: flex; justify-content: space-between; gap: 8px; text-align: left;">
-                        
-                        <div style="flex: 1; background: #f0f8ff; border: 1px solid #cce0ff; padding: 6px; border-radius: 4px;">
-                            <div style="font-size: 12px; font-weight: bold; border-bottom: 1px solid #a8cfff; margin-bottom: 6px; padding-bottom: 2px; color: #0056b3; text-align: center;">札幌方面</div>
-                            ${generateTrainHtml(sapporoTrains, "本日の運行終了")}
-                        </div>
+                <div style="margin-top: 5px; padding-top: 4px;">
+                    <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #232323; text-align: center;">JR手稲駅 時刻表</div>
+                    
+                    <div style="display: flex; border: 1px solid #ddd; margin-bottom: 10px; border-radius: 4px; overflow: hidden;">
+                        <div id="jr-tab-sapporo" onclick="switchJrDirection('sapporo')" style="flex: 1; text-align: center; padding: 8px; cursor: pointer; font-size: 13px; background: #232323; color: #fff; font-weight: bold;">札幌方面</div>
+                        <div id="jr-tab-otaru" onclick="switchJrDirection('otaru')" style="flex: 1; text-align: center; padding: 8px; cursor: pointer; font-size: 13px; background: #fafafa; color: #888; border-left: 1px solid #ddd;">小樽方面</div>
+                    </div>
 
-                        <div style="flex: 1; background: #fcfcfc; border: 1px solid #ddd; padding: 6px; border-radius: 4px;">
-                            <div style="font-size: 12px; font-weight: bold; border-bottom: 1px solid #ccc; margin-bottom: 6px; padding-bottom: 2px; color: #333; text-align: center;">小樽方面</div>
-                            ${generateTrainHtml(otaruTrains, "本日の運行終了")}
-                        </div>
-                        
+                    <div id="jr-content-sapporo" style="display: block; background: #fcfcfc; border: 1px solid #ccc; padding: 3px; border-radius: 4px;">
+                        ${generateTrainHtml(sapporoTrains, "本日の運行終了")}
+                    </div>
+
+                    <div id="jr-content-otaru" style="display: none; background: #fcfcfc; border: 1px solid #ccc; padding: 3px; border-radius: 4px;">
+                        ${generateTrainHtml(otaruTrains, "本日の運行終了")}
                     </div>
                 </div>
             `;
         }
     }
 
-const html = `
+    const html = `
         <div style="position: relative; text-align: center; margin-bottom: 15px;">
             <span style="${routeStyle} display: inline-block; padding: 4px 12px; border-radius: 4px; font-weight: bold; font-size: 20px;">${bus.number}</span>
-            
             <button onclick="closeModal()" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 22px; color: #888; cursor: pointer; padding: 0;">✕</button>
         </div>
         
@@ -623,6 +619,7 @@ const html = `
         modalEl.style.display = 'flex';
     }
 }
+
 function closeModal() {
     const modalEl = document.getElementById('bikou-modal');
     if (modalEl) modalEl.style.display = 'none';
@@ -634,34 +631,67 @@ function responseToJson(text) {
     return JSON.parse(text.substring(start, end + 1));
 }
 
-// ★ 手稲駅_元時刻シート専用のパーサー
-// ★ 手稲駅_元時刻シート専用のパーサー
-// ★ 手稲駅_元時刻シート専用のパーサー（J列の方面データ連動版）
-function parseTeineData(json) {
-    if (!json || !json.table || !json.table.rows) return [];
-    const rows = json.table.rows;
+// ★ 元時刻のダイヤ情報に、現時刻の遅延（L列）を【A列の列車番号】をキーにしてマージする関数
+function parseTeineAndLiveData(motoJson, genJson) {
+    if (!motoJson || !motoJson.table || !motoJson.table.rows) return [];
+    
+    // 1. まずは「手稲駅_現時刻」シートから【列車番号：遅延分】の辞書を作成
+    const delayMap = {};
+    if (genJson && genJson.table && genJson.table.rows) {
+        genJson.table.rows.forEach(row => {
+            
+            // 💡 A列 (インデックス0): 列車番号をキーにする！
+            const trainNumberCol = row.c[0];
+            let trainNumberKey = "";
+            if (trainNumberCol && trainNumberCol.v !== null) {
+                trainNumberKey = String(trainNumberCol.v).trim();
+            }
+
+            // L列 (インデックス11): 遅延分を安全に抽出
+            let delay = 0;
+            if (row.c[11] && row.c[11].v !== null) {
+                const v = row.c[11].v;
+                if (typeof v === 'number') {
+                    delay = Math.round(v);
+                } else {
+                    const parsed = parseInt(String(v).replace(/[^0-9-]/g, ''), 10);
+                    if (!isNaN(parsed)) delay = parsed;
+                }
+            }
+
+            // 列車番号が存在すれば辞書に登録（例： "135M": 3 ）
+            if (trainNumberKey) {
+                delayMap[trainNumberKey] = delay;
+            }
+        });
+    }
+
+    // 2. 「手稲駅_元時刻」シートをベースに遅延マップを結合
+    const motoRows = motoJson.table.rows;
     let parsed = [];
     
-    rows.forEach(row => {
+    motoRows.forEach(row => {
         const getVal = (col) => (col && col.v !== null) ? col.v : '';
         
-        // 列B: 表示時刻
+        // 💡 元時刻シートのA列 (インデックス0): 列車番号を取得
+        const trainNumberCol = row.c[0];
+        let trainNumber = "";
+        if (trainNumberCol && trainNumberCol.v !== null) {
+            trainNumber = String(trainNumberCol.v).trim();
+        }
+
+        // B列: 時刻
         const timeCol = row.c[1];
         let timeStr = "";
         if (timeCol) {
-            if (timeCol.f) timeStr = timeCol.f; 
-            else if (Array.isArray(timeCol.v)) timeStr = `${timeCol.v[0]}:${timeCol.v[1]}`; 
-            else timeStr = String(timeCol.v);
+            if (timeCol.f) timeStr = timeCol.f.trim(); 
+            else if (Array.isArray(timeCol.v)) timeStr = `${timeCol.v[0]}:${String(timeCol.v[1]).padStart(2, '0')}`; 
+            else timeStr = String(timeCol.v).trim();
         }
         
-        // 列F (インデックス5): 種別
-        const route = String(getVal(row.c[5]));   
-        
-        // 列G (インデックス6): 行先
-        const dest = String(getVal(row.c[6]));    
-
-        // 💡 列J (インデックス9): 方面（札幌・岩見沢方面 / 小樽方面）
-        const directionStr = String(getVal(row.c[9]));
+        const route = String(getVal(row.c[5])).trim();   // 列F: 種別
+        const dest = String(getVal(row.c[6])).trim();    // 列G: 行先
+        const directionStr = String(getVal(row.c[9]));   // 列J: 方面
 
         let h = null, m = null;
         if (timeStr.includes(':')) {
@@ -671,20 +701,54 @@ function parseTeineData(json) {
         }
 
         if (h !== null && !isNaN(h) && m !== null && !isNaN(m) && route && dest) {
-            // 💡 J列の文字列に「小樽」が含まれているかで自動判定
             const isOtaruDirection = directionStr.includes("小樽");
+
+            // 💡 列車番号をキーにして遅延データを引き出す（シンプルで最強！）
+            const delay = trainNumber ? (delayMap[trainNumber] || 0) : 0;
 
             parsed.push({ 
                 h, 
                 m, 
                 route, 
                 dest, 
-                isOtaruDirection // 判定結果（true / false）をオブジェクトに持たせる
+                isOtaruDirection,
+                delay
             });
         }
     });
     
-    // 時間順にソート
     parsed.sort((a, b) => (a.h * 60 + a.m) - (b.h * 60 + b.m));
     return parsed;
+}
+
+// ★ JR乗換モーダル内の方面切り替えロジック
+function switchJrDirection(direction) {
+    const tabSapporo = document.getElementById('jr-tab-sapporo');
+    const tabOtaru = document.getElementById('jr-tab-otaru');
+    const contentSapporo = document.getElementById('jr-content-sapporo');
+    const contentOtaru = document.getElementById('jr-content-otaru');
+
+    if (!tabSapporo || !tabOtaru || !contentSapporo || !contentOtaru) return;
+
+    if (direction === 'sapporo') {
+        tabSapporo.style.background = '#232323';
+        tabSapporo.style.color = '#fff';
+        tabSapporo.style.fontWeight = 'bold';
+        contentSapporo.style.display = 'block';
+
+        tabOtaru.style.background = '#fafafa';
+        tabOtaru.style.color = '#888';
+        tabOtaru.style.fontWeight = 'normal';
+        contentOtaru.style.display = 'none';
+    } else {
+        tabOtaru.style.background = '#232323';
+        tabOtaru.style.color = '#fff';
+        tabOtaru.style.fontWeight = 'bold';
+        contentOtaru.style.display = 'block';
+
+        tabSapporo.style.background = '#fafafa';
+        tabSapporo.style.color = '#888';
+        tabSapporo.style.fontWeight = 'normal';
+        contentSapporo.style.display = 'none';
+    }
 }
