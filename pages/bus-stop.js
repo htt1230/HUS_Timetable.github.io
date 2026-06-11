@@ -238,6 +238,7 @@ function updateCurrentTime() {
     }
 }
 
+
 function updateClockDisplay() {
     // ★ h の「.padStart(2, '0')」を削除！
     const h = String(simHour);
@@ -438,7 +439,6 @@ function closeModal() {
     const modalEl = document.getElementById('bikou-modal');
     if (modalEl) modalEl.style.display = 'none';
 }
-
 function renderTable() {
     const tbody = document.getElementById('table-body');
     if (!tbody) return;
@@ -453,29 +453,42 @@ function renderTable() {
         displayData = displayData.filter(d => d.dest === selectedDest);
     }
 
+    const timetableWrapEl = document.getElementById('timetable-wrap');
+    const noDataEl = document.getElementById('no-data');
+
     if (displayData.length === 0) {
-        const timetableEl = document.getElementById('timetable');
-        const noDataEl = document.getElementById('no-data');
-        if (timetableEl) timetableEl.style.display = 'none';
+        if (timetableWrapEl) timetableWrapEl.style.display = 'none';
         if (noDataEl) noDataEl.style.display = 'block';
         return;
     }
 
-    const timetableEl = document.getElementById('timetable');
-    const noDataEl = document.getElementById('no-data');
-    if (timetableEl) timetableEl.style.display = 'table';
+    if (timetableWrapEl) timetableWrapEl.style.display = 'block';
     if (noDataEl) noDataEl.style.display = 'none';
+
+    // 💡 【ここから追加】現在時刻（分換算）を取得
+    const currentTotalMin = simHour * 60 + simMin;
+    let closestRowEl = null;      // 一番近い行のHTML要素を記憶する変数
+    let minDiff = Infinity;       // 時間差の最小値を記憶する変数
 
     displayData.forEach(bus => {
         const minStr = String(bus.m).padStart(2, '0');
-        
         const firstBadge = (bus.isFirst == 1) ? '<span class="c-first" style="margin-left: 4px;">始発</span>' : '';
-        
         const infoBtnHtml = bus.bikou ? `<button class="c-info-btn" style="margin-left: 4px;" onclick="openModal('${bus.bikou.replace(/'/g, "\\'")}')">❕</button>` : '';
-        
         const routeStyle = getRouteStyle(bus.number);
 
         const tr = document.createElement('tr');
+        
+        // 💡 【ここから追加】この便の時刻（分換算）と現在時刻の差を計算
+        const busTotalMin = bus.h * 60 + bus.m;
+        const diff = busTotalMin - currentTotalMin;
+
+        // 条件：現在時刻「以降」で、かつこれまでで一番現在時刻に近い便を探す
+        // （例：8:11に対して 7:55(差-16) と 8:13(差+2) なら、8:13が選ばれます）
+        if (diff >= 0 && diff < minDiff) {
+            minDiff = diff;
+            closestRowEl = tr; // この行が「いま一番近い未来の便」
+        }
+
         tr.innerHTML = `
             <td><span class="c-route" style="${routeStyle}">${bus.number}</span></td>
             <td style="text-align: center; vertical-align: middle;">
@@ -489,6 +502,19 @@ function renderTable() {
         tbody.appendChild(tr);
     });
 
+// renderTable 関数の最後の部分です
+    if (closestRowEl) {
+        // 1. 対象の行に目印のクラスをつける
+        closestRowEl.classList.add('current-bus-row');
+
+        // 2. 枠内の一番上（start）にスクロールさせる
+        setTimeout(() => {
+            closestRowEl.scrollIntoView({
+                behavior: 'smooth', // スルッと滑らかに動かす
+                block: 'start'     // 🔥 ここを「start」にすれば一番上でピタッと止まります
+            });
+        }, 100);
+    }
 }
 
 function responseToJson(text) {
@@ -496,3 +522,4 @@ function responseToJson(text) {
     const end = text.lastIndexOf('}');
     return JSON.parse(text.substring(start, end + 1));
 }
+

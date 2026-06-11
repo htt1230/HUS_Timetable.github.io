@@ -430,7 +430,8 @@ table th:nth-child(4), table td:nth-child(4) { width: 15%; }
 }
 
 .table-scroll-container {
-    max-height: 400px;    /* 縦スクロールさせたい最大値（好みの高さに調整してください） */
+    /*max-height: calc(100vh - 100px);  calcっていう技法があるらしい */
+    max-height: calc(100vh - 550px);
     overflow-y: auto;     /* 縦にはみ出た場合のみスクロール */
     border: 1px solid #ddd; /* 必要ならテーブルの周りの枠線 */
     position: relative;
@@ -438,7 +439,7 @@ table th:nth-child(4), table td:nth-child(4) { width: 15%; }
 
 /* スクロールしたときにテーブルのヘッダー（見出し）を一番上に固定する設定（おすすめ） */
 .table-scroll-container th {
-    position: sticky;
+    position: sticky; 
     top: 0;
     background-color: #fff; /* 背景色を設定して透けないようにする */
     z-index: 1;
@@ -450,5 +451,9 @@ table th:nth-child(4), table td:nth-child(4) { width: 15%; }
     }
     .skeleton-column:not(:first-child) {
         display: none !important;
+    }
+
+    .table-scroll-container {
+        max-height: 400px;
     }
 }
