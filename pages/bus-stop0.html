@@ -14,20 +14,20 @@
 
 <div class="container">
 
-
     <header>
         <div class="current-time">
-            <a href="../select.html" style="padding-right: 10px; text-decoration-line: none; color: #232323;"><b>＜</b></a><a id="bus-stop-link" href="https://maps.app.goo.gl/aqJjiw3sopQYFqAj9"><span id="current-bus-stop">----</span></a> 
+            <a href="../select.html" style="padding-right: 10px; text-decoration-line: none; color: #232323;"><b>＜</b></a>
+            <a id="bus-stop-link" href="https://maps.app.goo.gl/aqJjiw3sopQYFqAj9"><span id="current-bus-stop">----</span></a> 
             <span id="current-clock">--:--</span>
         </div>
     </header>
 
     <div class="lcd-board" id="skeleton-lcd">
         <div class="lcd-header">
-            <span>
+            <div class="skeleton-tabs-container">
                 <div class="skeleton-tab"></div>
                 <div class="skeleton-tab"></div>
-            </span>
+            </div>
         </div>
         <div class="skeleton-entries">
             <div class="skeleton-column">
@@ -50,11 +50,10 @@
             </div>
         </div>
     </div>
+
     <div class="lcd-board" id="lcd-board" style="display: none;">
         <div class="lcd-header">
-            <span>
-                <span id="mobile-dir-tabs" style="display: none;"></span>
-            </span>
+            <span id="mobile-dir-tabs" style="display: none;"></span>
         </div>
         <div id="lcd-entries"></div>
     </div>
@@ -62,7 +61,7 @@
     <div class="tabs">
         <div class="tab" id="tab-平日" onclick="changeDate('平日')">平日</div>
         <div class="tab" id="tab-土曜" onclick="changeDate('土曜')">土曜</div>
-        <div class="tab" id="tab-日曜/祝日" onclick="changeDate('日曜/祝日')">日祝</div>
+        <div class="tab" id="tab-日祝" onclick="changeDate('日曜/祝日')">日祝</div>
     </div>
 
     <div class="filter-container" id="filter-ui" style="display: none;">
@@ -73,47 +72,37 @@
     <div id="loading" style="display: none; text-align: center; padding: 30px; color: #666;"></div>
     <div id="no-data" style="display: none;">本日の運行は終了しました。</div>
 
-    <table id="skeleton-table">
-    <thead>
-        <tr>
-            <th style="width: 30%;">系統</th>
-            <th style="width: 35%;">行先</th>
-            <th style="width: 20%;">時刻</th>
-            <th style="width: 15%;">始発</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
-        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
-        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
-        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
-        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
-        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
-        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
-        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
-        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
-        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
-        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
-        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
-        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
-        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
-        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
-        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
-        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
-        <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
-    </tbody>
-</table>
-    <table id="timetable" style="display: none;">
-        <thead>
-            <tr>
-                <th>系統</th>
-                <th>行先</th>
-                <th>時刻</th>
-                <th>始発</th>
-            </tr>
-        </thead>
-        <tbody id="table-body"></tbody>
-    </table>
+    <div class="table-scroll-container" id="skeleton-table-wrap">
+        <table id="skeleton-table">
+            <thead>
+                <tr>
+                    <th style="width: 30%;">系統</th>
+                    <th style="width: 35%;">行先</th>
+                    <th style="width: 20%;">時刻</th>
+                    <th style="width: 15%;">始発</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+                <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+                <tr><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td><div class="skeleton-text"></div></td><td></td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="table-scroll-container" id="timetable-wrap" style="display: none;">
+        <table id="timetable">
+            <thead>
+                <tr>
+                    <th>系統</th>
+                    <th>行先</th>
+                    <th>時刻</th>
+                    <th>始発</th>
+                </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+        </table>
+    </div>
 </div>
 
 <div id="bikou-modal" class="modal-overlay" onclick="closeModal()">

@@ -429,6 +429,21 @@ table th:nth-child(4), table td:nth-child(4) { width: 15%; }
     animation: shimmer 1.5s infinite;
 }
 
+.table-scroll-container {
+    max-height: 400px;    /* 縦スクロールさせたい最大値（好みの高さに調整してください） */
+    overflow-y: auto;     /* 縦にはみ出た場合のみスクロール */
+    border: 1px solid #ddd; /* 必要ならテーブルの周りの枠線 */
+    position: relative;
+}
+
+/* スクロールしたときにテーブルのヘッダー（見出し）を一番上に固定する設定（おすすめ） */
+.table-scroll-container th {
+    position: sticky;
+    top: 0;
+    background-color: #fff; /* 背景色を設定して透けないようにする */
+    z-index: 1;
+}
+
 @media (max-width: 600px) {
     .skeleton-entries {
         flex-direction: column;

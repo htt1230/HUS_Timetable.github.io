@@ -189,15 +189,15 @@ window.onload = async function() {
         const skLcd = document.getElementById('skeleton-lcd');
         if (skLcd) skLcd.style.display = 'none';
         
-        const skTable = document.getElementById('skeleton-table');
-        if (skTable) skTable.style.display = 'none';
+        const skTableWrap = document.getElementById('skeleton-table-wrap');
+        if (skTableWrap) skTableWrap.style.display = 'none';
 
         const loadingEl = document.getElementById('loading');
         if (loadingEl) loadingEl.style.display = 'none';
 
         document.getElementById('lcd-board').style.display = 'block';
         document.getElementById('filter-ui').style.display = 'flex';
-        document.getElementById('timetable').style.display = 'table';
+        document.getElementById('timetable-wrap').style.display = 'block';
         // 👆👆 ここまで 👆👆
         
         updateDestDropdown();
