@@ -417,7 +417,6 @@ function renderNextBuses() {
                 </a>
             `;
         }
-        // 👆👆👆 ここまで追加 👆👆👆
 
         columnHtml += `</div>`;
         container.innerHTML += columnHtml;
