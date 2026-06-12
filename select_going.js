@@ -1,10 +1,14 @@
 const busStopInfo = {
     '0': {
-        name: "学校へ行く",
+        name: "手稲駅北口",
         direction: ""
     },
     '1': {
-        name: "帰宅する",
+        name: "宮の沢駅",
+        direction: ""
+    },
+    '2': {
+        name: "星置駅",
         direction: ""
     }
 };
@@ -34,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
         stop.addEventListener('mouseenter', () => {
             // 画面幅が600pxより大きい（PC版）時のみ動作
             if (busName && window.innerWidth > 600) { 
-                titleElement.textContent = `${busName}`;
+                titleElement.textContent = `${busName}から出発する`;
                 infoElement.textContent = busStopInfo[stop.id].direction;
             }
         });
@@ -57,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // テキストを更新
                     if (busName) {
-                        titleElement.textContent = `${busName}`;
+                        titleElement.textContent = `${busName}から出発する`;
                         infoElement.textContent = busStopInfo[stop.id].direction;
                     }
                 } else {
