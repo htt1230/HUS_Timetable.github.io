@@ -525,6 +525,8 @@ const generateTrainHtml = (trains, emptyMsg) => {
                     let displayRoute = t.route;
                     if (t.route.includes("ライナー") || t.route.includes("ﾗｲﾅｰ")) {
                         displayRoute = "ﾗｲﾅｰ";
+                    }else if (t.route.includes("特別快速")) {
+                        displayRoute = "特快";
                     }
 
                     let timeStyle = "font-weight: bold; font-size: 18px; color: #232323;";
