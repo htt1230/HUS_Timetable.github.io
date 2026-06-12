@@ -538,7 +538,6 @@ const generateTrainHtml = (trains, emptyMsg) => {
                         
                         delayHtml = `
                             <span style="font-weight: bold; font-size: 18px; color: #d9333f; margin-right: 4px;">${delayedH}:${delayedM}</span>
-                            <span style="font-size: 11px; color: #fff; background: #d9333f; padding: 1px 4px; border-radius: 3px; vertical-align: middle; white-space: nowrap;">+${t.delay}分</span>
                         `;
                     }
 
